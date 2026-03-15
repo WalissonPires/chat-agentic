@@ -1,0 +1,16 @@
+namespace ChatAgentic.Channels
+{
+    public interface IChannelMessageTransform
+    {
+        Task<ChannelMessageTransformResult> Execute(ChannelMessageTransformInput input);
+    }
+
+    public record ChannelMessageTransformInput(
+        string JsonPayload
+    );
+
+    public record ChannelMessageTransformResult(
+        bool SelfMessage,
+        Message Message
+    );
+}
