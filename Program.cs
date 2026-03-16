@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ChatAgentic.Channels;
 using ChatAgentic.Data;
+using ChatAgentic.Workflows;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,12 +9,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddHttpClient();
 
+
 builder.Services.Configure<EvolutionApiOptions>(builder.Configuration.GetSection("EvolutionApi"));
 builder.Services.AddScoped<EvolutionApiClient>();
 
 builder.Services.AddScoped<WhatsappMessageTransform>();
 builder.Services.AddScoped<ChannelMessageTransformFactory>();
 builder.Services.AddScoped<WebhookMessageProcessor>();
+
+builder.Services.AddSingleton<IMessageQueue<Message>, InMemoryMessageQueue<Message>>();
+builder.Services.AddTransient<AssistentWorkflow>();
+builder.Services.AddHostedService<MessageConsumer>();
+builder.Services.AddTransient<LoadConversationExecutor>();
+builder.Services.AddTransient<SaveConversationExecutor>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -34,7 +42,7 @@ app.MapGet("/", () => new { Status = "healthy" });
 
 app.MapPost("/webhook/{channel}/{token}", async (string channel, string token, JsonElement body, WebhookMessageProcessor messageProcessor) =>
 {
-    var channelType = Enum.Parse<ChannelType>(channel);
+    var channelType = Enum.Parse<ChannelType>(channel, ignoreCase: true);
     await messageProcessor.Execute(new(channelType, token, body.ToString()));
 });
 

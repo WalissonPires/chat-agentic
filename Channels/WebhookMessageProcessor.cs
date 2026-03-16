@@ -1,4 +1,5 @@
 using ChatAgentic.Data;
+using ChatAgentic.Workflows;
 using Microsoft.EntityFrameworkCore;
 
 namespace ChatAgentic.Channels
@@ -8,12 +9,14 @@ namespace ChatAgentic.Channels
         private readonly ILogger _logger;
         private readonly AppDbContext _dbContext;
         private readonly ChannelMessageTransformFactory _processorFactory;
+        private readonly IMessageQueue<Message> _queue;
 
-        public WebhookMessageProcessor(ILogger<WhatsappMessageTransform> logger, AppDbContext dbContext, ChannelMessageTransformFactory processorFactory)
+        public WebhookMessageProcessor(ILogger<WhatsappMessageTransform> logger, AppDbContext dbContext, ChannelMessageTransformFactory processorFactory, IMessageQueue<Message> queue)
         {
             _logger = logger;
             _dbContext = dbContext;
             _processorFactory = processorFactory;
+            _queue = queue;
         }
 
         public async Task Execute(WebhookMessageProcessorInput input)
@@ -27,8 +30,8 @@ namespace ChatAgentic.Channels
                 return;
             }
 
-            var isValidToken = await _dbContext.Workspaces.Where(x => x.WebhookToken == input.Token).AnyAsync();
-            if (!isValidToken)
+            var workspaceId = await _dbContext.Workspaces.Where(x => x.WebhookToken == input.Token).Select(x => x.Id).FirstOrDefaultAsync();
+            if (workspaceId == default)
             {
                 _logger.LogDebug("Webhook token not found");
                 return;
@@ -38,13 +41,15 @@ namespace ChatAgentic.Channels
             var processor = _processorFactory.Create(input.Channel);
 
             _logger.LogDebug("Process message");
-            var result = await processor.Execute(new (input.JsonPayload));
+            var result = await processor.Execute(new(workspaceId, input.JsonPayload));
 
             if (result.SelfMessage)
             {
                 _logger.LogDebug("Skip self message");
                 return;
             }
+
+            await _queue.EnqueueAsync(result.Message);
 
             _logger.LogDebug("Message processed");
         }

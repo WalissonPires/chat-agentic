@@ -14,6 +14,7 @@ UsersMetadata(userId, key, value) | UserMeta(1, 'midesp.tools', '[x,y,z]'), User
 User(id, workspaceId)
 UserChannels(id, userId, channel, identifier)
 ChannelType(Whatsapp, Telegram, Email)
+
 Sessions(id, userId, channel, identifier, expireAt, ...)
 ChatHistory(id, sessionId, createdAt, role, messsageId, messageText, messageType, messageMime, messsageFile)
 MessageType(text, file)
