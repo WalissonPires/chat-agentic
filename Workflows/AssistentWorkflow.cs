@@ -6,14 +6,16 @@ namespace ChatAgentic.Workflows
     public class AssistentWorkflow
     {
         private readonly ILogger _logger;
-        private readonly LoadConversationExecutor _loadConversaion;
+        private readonly LoadContextExecutor _loadContext;
+        private readonly SpeechToTextExecutor _speechToText;
         private readonly SaveConversationExecutor _saveConversation;
 
-        public AssistentWorkflow(ILogger<AssistentWorkflow> logger, LoadConversationExecutor loadConversaion, SaveConversationExecutor saveConversation)
+        public AssistentWorkflow(ILogger<AssistentWorkflow> logger, LoadContextExecutor loadContext, SpeechToTextExecutor speechToText, SaveConversationExecutor saveConversation)
         {
             _logger = logger;
-            _loadConversaion = loadConversaion;
+            _loadContext = loadContext;
             _saveConversation = saveConversation;
+            _speechToText = speechToText;
         }
 
         public async Task RunAsync(Message message, CancellationToken ct = default)
@@ -56,8 +58,10 @@ namespace ChatAgentic.Workflows
 
         private Workflow BuildWorkflow()
         {
-            var workflow = new WorkflowBuilder(_loadConversaion)
-                .AddEdge(_loadConversaion, _saveConversation)
+            var workflow = new WorkflowBuilder(_loadContext)
+                .AddEdge<WorkflowExecutionContext>(_loadContext, _speechToText, weContext => weContext?.ReceiveidAudio == true)
+                .AddEdge<WorkflowExecutionContext>(_loadContext, _saveConversation, weContext => weContext?.ReceiveidAudio != true)
+                .AddEdge(_speechToText, _saveConversation)
                 .Build();
             return workflow;
         }

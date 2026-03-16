@@ -8,7 +8,9 @@ namespace ChatAgentic.Workflows
         int ConversationId,
         ChannelType Channel,
         string SenderIdentifier,
-        int LastMessagesCount,
-        List<ChatMessage> Messages
+        bool ReceiveidAudio,
+        List<Message> InputMessages,
+        List<ChatMessage> OutputMessages,
+        List<ChatMessage> LastMessages
     );
 }

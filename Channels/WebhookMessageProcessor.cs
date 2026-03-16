@@ -1,10 +1,12 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using ChatAgentic.Data;
 using ChatAgentic.Workflows;
 using Microsoft.EntityFrameworkCore;
 
 namespace ChatAgentic.Channels
 {
-    public class WebhookMessageProcessor
+    public partial class WebhookMessageProcessor
     {
         private readonly ILogger _logger;
         private readonly AppDbContext _dbContext;
@@ -49,10 +51,42 @@ namespace ChatAgentic.Channels
                 return;
             }
 
+            if (!string.IsNullOrEmpty(result.Message.ContentText))
+            {
+                result = result with
+                {
+                    Message = result.Message with
+                    {
+                        ContentText = TextSanatization(result.Message.ContentText)
+                    }
+                };
+            }
+
             await _queue.EnqueueAsync(result.Message);
 
             _logger.LogDebug("Message processed");
         }
+
+        public string TextSanatization(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+
+            // Remove invisible control characters
+            var textSanitized = TextSanatizationRegex().Replace(input, "");
+
+            // Counting Grapheme Clusters
+            var info = new StringInfo(textSanitized);
+            if (info.LengthInTextElements > 200)
+                throw new Exception("The message exceeds the 200-character limit.");
+
+            return textSanitized;
+        }
+
+
+        // \p{Cf} remove Format characters (LRM, RLM, ZWJ invisíveis isolados)
+        // \p{Cc} remove Control characters (como caracteres de sistema)
+        [GeneratedRegex(@"[\p{Cf}\p{Cc}]")]
+        private static partial Regex TextSanatizationRegex();
     }
 
     public record WebhookMessageProcessorInput(

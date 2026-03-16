@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ChatAgentic.Channels;
 using ChatAgentic.Data;
+using ChatAgentic.Services;
 using ChatAgentic.Workflows;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,8 +21,13 @@ builder.Services.AddScoped<WebhookMessageProcessor>();
 builder.Services.AddSingleton<IMessageQueue<Message>, InMemoryMessageQueue<Message>>();
 builder.Services.AddTransient<AssistentWorkflow>();
 builder.Services.AddHostedService<MessageConsumer>();
-builder.Services.AddTransient<LoadConversationExecutor>();
+builder.Services.AddTransient<LoadContextExecutor>();
 builder.Services.AddTransient<SaveConversationExecutor>();
+builder.Services.AddTransient<SpeechToTextExecutor>();
+
+builder.Services.Configure<AIProviderOptions>(builder.Configuration.GetSection("AIProvider"));
+builder.Services.AddScoped<SpeechToTextService>();
+builder.Services.AddTransient<MessageMediaStream>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {

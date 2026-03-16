@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ChatAgentic.Workflows
 {
-    public sealed partial class LoadConversationExecutor : Executor
+    public sealed partial class LoadContextExecutor : Executor
     {
         private readonly AppDbContext _dbContext;
         private readonly ILogger _logger;
 
-        public LoadConversationExecutor(AppDbContext dbContext, ILogger<LoadConversationExecutor> logger) : base("LoadSession")
+        public LoadContextExecutor(AppDbContext dbContext, ILogger<LoadContextExecutor> logger) : base("LoadContext")
         {
             _dbContext = dbContext;
             _logger = logger;
@@ -63,11 +63,11 @@ namespace ChatAgentic.Workflows
                 ConversationId: conversation.Id,
                 Channel: message.Channel,
                 SenderIdentifier: message.SenderIdentifier,
-                Messages: conversation.Messages.Select(x => x.MapToChatMessage()).ToList(),
-                LastMessagesCount: conversation.Messages.Count
+                ReceiveidAudio: message.ContentType == MessageContentType.Audio,
+                InputMessages: [ message ],
+                OutputMessages: [],
+                LastMessages: conversation.Messages.Select(x => x.MapToChatMessage()).ToList()
             );
-
-            weContext.Messages.Add(message.ToChatMessage());
 
             await context.SendMessageAsync(weContext, ct);
 

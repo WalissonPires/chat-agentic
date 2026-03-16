@@ -1,7 +1,9 @@
+using ChatAgentic.Channels;
 using ChatAgentic.Data;
 using ChatAgentic.Models;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 
 namespace ChatAgentic.Workflows
 {
@@ -29,9 +31,9 @@ namespace ChatAgentic.Workflows
         {
             _logger.LogDebug("Save conversation started");
 
-            var newChatMessages = weContext.Messages.Skip(weContext.LastMessagesCount).ToList();
+            ChatMessage[] newChatMessages = [ ..weContext.InputMessages.Select(x => x.ToChatMessage()).ToArray(), ..weContext.OutputMessages ];
 
-            _logger.LogDebug("{messageCount} new messages to save", newChatMessages.Count);
+            _logger.LogDebug("{messageCount} new messages to save", newChatMessages.Length);
 
             foreach (var chatMessage in newChatMessages)
             {
