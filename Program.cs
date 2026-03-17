@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
 builder.Services.AddOpenApi();
 builder.Services.AddHttpClient();
 
@@ -24,9 +27,11 @@ builder.Services.AddHostedService<MessageConsumer>();
 builder.Services.AddTransient<LoadContextExecutor>();
 builder.Services.AddTransient<SaveConversationExecutor>();
 builder.Services.AddTransient<SpeechToTextExecutor>();
+builder.Services.AddTransient<AIAgentExecutor>();
 
 builder.Services.Configure<AIProviderOptions>(builder.Configuration.GetSection("AIProvider"));
 builder.Services.AddScoped<SpeechToTextService>();
+builder.Services.AddScoped<AIAgentFactory>();
 builder.Services.AddTransient<MessageMediaStream>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
