@@ -3,6 +3,7 @@ using ChatAgentic.Data;
 using ChatAgentic.Models;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 
 namespace ChatAgentic.Workflows
 {
@@ -58,6 +59,8 @@ namespace ChatAgentic.Workflows
             else
                 _logger.LogDebug("Active conversation loaded. Conversation {conversationId}. {messagesCount} Messages", conversation.Id, conversation.Messages.Count);
 
+            ChatRole[] includeRoles = [ ChatRole.User, ChatRole.Assistant ];
+
             var weContext = new WorkflowExecutionContext(
                 WorkspaceId: message.WorkspaceId,
                 ConversationId: conversation.Id,
@@ -66,7 +69,7 @@ namespace ChatAgentic.Workflows
                 ReceiveidAudio: message.ContentType == MessageContentType.Audio,
                 InputMessages: [ message ],
                 OutputMessages: [],
-                LastMessages: conversation.Messages.Select(x => x.MapToChatMessage()).ToList()
+                LastMessages: conversation.Messages.Select(x => x.MapToChatMessage()).Where(x => includeRoles.Contains(x.Role)).Take(20).ToList()
             );
 
             await context.SendMessageAsync(weContext, ct);

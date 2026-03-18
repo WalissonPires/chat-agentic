@@ -17,8 +17,10 @@ builder.Services.AddHttpClient();
 builder.Services.Configure<EvolutionApiOptions>(builder.Configuration.GetSection("EvolutionApi"));
 builder.Services.AddScoped<EvolutionApiClient>();
 
-builder.Services.AddScoped<WhatsappMessageTransform>();
 builder.Services.AddScoped<ChannelMessageTransformFactory>();
+builder.Services.AddScoped<WhatsappMessageTransform>();
+builder.Services.AddScoped<ChannelSendMessageFactory>();
+builder.Services.AddScoped<WhatsappSendMessage>();
 builder.Services.AddScoped<WebhookMessageProcessor>();
 
 builder.Services.AddSingleton<IMessageQueue<Message>, InMemoryMessageQueue<Message>>();
@@ -28,6 +30,7 @@ builder.Services.AddTransient<LoadContextExecutor>();
 builder.Services.AddTransient<SaveConversationExecutor>();
 builder.Services.AddTransient<SpeechToTextExecutor>();
 builder.Services.AddTransient<AIAgentExecutor>();
+builder.Services.AddTransient<ReplyMessgeExecutor>();
 
 builder.Services.Configure<AIProviderOptions>(builder.Configuration.GetSection("AIProvider"));
 builder.Services.AddScoped<SpeechToTextService>();

@@ -56,7 +56,7 @@ namespace ChatAgentic.Models
 
         public static ConversationMessage[] MapToConversationMessage(this ChatMessage chatMessage)
         {
-            var messages = new ConversationMessage[chatMessage.Contents.Count];
+            var messages = new List<ConversationMessage>();
 
             for (int i = 0; i < chatMessage.Contents.Count; i++)
             {
@@ -75,14 +75,24 @@ namespace ChatAgentic.Models
                         msg.ContentType = MessageContentType.Text;
                         msg.ContentText = c.Text;
                         break;
+                    case FunctionCallContent c:
+                        msg.Role = ChatRole.Tool.ToString();
+                        msg.ContentType = MessageContentType.Text;
+                        msg.ContentText = $"Tool '{c.Name}' called. CallId: {c.CallId}";
+                        break;
+                    case FunctionResultContent c:
+                        msg.Role = ChatRole.Tool.ToString();
+                        msg.ContentType = MessageContentType.Text;
+                        msg.ContentText = $"Result for call tool '{c.CallId}': " + c.Result;
+                        break;
                     default:
                         throw new NotSupportedException("Content type not supported: " + content.GetType().Name);
                 }
 
-                messages[i] = msg;
+                messages.Add(msg);
             }
 
-            return messages;
+            return messages.ToArray();
         }
     }
 }
