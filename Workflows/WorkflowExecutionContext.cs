@@ -11,6 +11,7 @@ namespace ChatAgentic.Workflows
         bool ReceiveidAudio,
         List<Message> InputMessages,
         List<ChatMessage> OutputMessages,
-        List<ChatMessage> LastMessages
+        List<ChatMessage> LastMessages,
+        List<ChatMessage> OutputAudioMessages
     );
 }

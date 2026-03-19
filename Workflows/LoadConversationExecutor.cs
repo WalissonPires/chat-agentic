@@ -69,6 +69,7 @@ namespace ChatAgentic.Workflows
                 ReceiveidAudio: message.ContentType == MessageContentType.Audio,
                 InputMessages: [ message ],
                 OutputMessages: [],
+                OutputAudioMessages: [],
                 LastMessages: conversation.Messages.Select(x => x.MapToChatMessage()).Where(x => includeRoles.Contains(x.Role)).Take(20).ToList()
             );
 

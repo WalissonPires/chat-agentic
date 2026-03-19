@@ -10,6 +10,12 @@ namespace ChatAgentic.Utils
             Parse(dataUri);
         }
 
+        public DataUri(string mimeType, string base64)
+        {
+            MimeType = mimeType;
+            Base64 = base64;
+        }
+
         private void Parse(string dataUri)
         {
             int commaIdx = dataUri.IndexOf(',');
@@ -20,6 +26,11 @@ namespace ChatAgentic.Utils
             var meta = dataUri[5..commaIdx];              // e.g. "audio/webm;base64"
             MimeType = meta.Split(';')[0];                // e.g. "audio/webm"
             Base64 = dataUri[(commaIdx + 1)..];           // raw Base64 bytes
+        }
+
+        public override string ToString()
+        {
+            return $"data:{MimeType};base64,{Base64}";
         }
     }
 }

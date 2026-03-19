@@ -30,10 +30,12 @@ builder.Services.AddTransient<LoadContextExecutor>();
 builder.Services.AddTransient<SaveConversationExecutor>();
 builder.Services.AddTransient<SpeechToTextExecutor>();
 builder.Services.AddTransient<AIAgentExecutor>();
+builder.Services.AddTransient<TextToSpeechExecutor>();
 builder.Services.AddTransient<ReplyMessgeExecutor>();
 
 builder.Services.Configure<AIProviderOptions>(builder.Configuration.GetSection("AIProvider"));
 builder.Services.AddScoped<SpeechToTextService>();
+builder.Services.AddScoped<TextToSpeechService>();
 builder.Services.AddScoped<AIAgentFactory>();
 builder.Services.AddTransient<MessageMediaStream>();
 

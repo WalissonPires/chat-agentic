@@ -11,9 +11,11 @@ namespace ChatAgentic.Workflows
         private readonly SaveConversationExecutor _saveConversation;
         private readonly AIAgentExecutor _aiAgent;
         private readonly ReplyMessgeExecutor _replyMessage;
+        private readonly TextToSpeechExecutor _textToSpeech;
 
     public AssistentWorkflow(ILogger<AssistentWorkflow> logger, LoadContextExecutor loadContext, SpeechToTextExecutor speechToText,
-        SaveConversationExecutor saveConversation, AIAgentExecutor aiAgent, ReplyMessgeExecutor replyMessage)
+        SaveConversationExecutor saveConversation, AIAgentExecutor aiAgent, ReplyMessgeExecutor replyMessage,
+        TextToSpeechExecutor textToSpeech)
     {
       _logger = logger;
       _loadContext = loadContext;
@@ -21,6 +23,7 @@ namespace ChatAgentic.Workflows
       _speechToText = speechToText;
       _aiAgent = aiAgent;
       _replyMessage = replyMessage;
+      _textToSpeech = textToSpeech;
     }
 
     public async Task RunAsync(Message message, CancellationToken ct = default)
@@ -67,7 +70,9 @@ namespace ChatAgentic.Workflows
                 .AddEdge<WorkflowExecutionContext>(_loadContext, _speechToText, weContext => weContext?.ReceiveidAudio == true)
                 .AddEdge<WorkflowExecutionContext>(_loadContext, _aiAgent, weContext => weContext?.ReceiveidAudio != true)
                 .AddEdge(_speechToText, _aiAgent)
-                .AddEdge(_aiAgent, _replyMessage)
+                .AddEdge<WorkflowExecutionContext>(_aiAgent, _textToSpeech, weContext => weContext?.ReceiveidAudio == true)
+                .AddEdge<WorkflowExecutionContext>(_aiAgent, _replyMessage, weContext => weContext?.ReceiveidAudio != true)
+                .AddEdge(_textToSpeech, _replyMessage)
                 .AddEdge(_replyMessage, _saveConversation)
                 .Build();
 

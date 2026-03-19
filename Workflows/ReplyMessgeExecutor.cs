@@ -31,9 +31,19 @@ namespace ChatAgentic.Workflows
 
             var sendMesage = _sendMesageFactory.Create(weContext.Channel);
 
-            foreach (var message in weContext.OutputMessages)
+            if (weContext.OutputAudioMessages.Count > 0)
             {
-                await sendMesage.ExecuteAsync(new (weContext.SenderIdentifier, message), ct);
+                foreach (var message in weContext.OutputAudioMessages)
+                {
+                    await sendMesage.ExecuteAsync(new(weContext.SenderIdentifier, message), ct);
+                }
+            }
+            else
+            {
+                foreach (var message in weContext.OutputMessages)
+                {
+                    await sendMesage.ExecuteAsync(new(weContext.SenderIdentifier, message), ct);
+                }
             }
 
             await context.SendMessageAsync(weContext);
