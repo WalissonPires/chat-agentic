@@ -10,8 +10,9 @@ namespace ChatAgentic.Services
         private readonly ILoggerFactory _loggerFactory;
         private readonly OpenAIClient _aiClient;
         private readonly string _chatModel;
+        private readonly AIAgentToolsFactory _toolsFactory;
 
-        public AIAgentFactory(IOptions<AIProviderOptions> aiProviderOptions, ILoggerFactory loggerFactory)
+        public AIAgentFactory(IOptions<AIProviderOptions> aiProviderOptions, ILoggerFactory loggerFactory, AIAgentToolsFactory toolsFactory)
         {
             var apiKey = aiProviderOptions.Value.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
             var model = aiProviderOptions.Value.ChatModel ?? throw new Exception("AIProvider ChatModel not defined.");
@@ -19,9 +20,10 @@ namespace ChatAgentic.Services
             _aiClient = new OpenAIClient(apiKey);
             _chatModel = model;
             _loggerFactory = loggerFactory;
+            _toolsFactory = toolsFactory;
         }
 
-        public AIAgent Create()
+        public async Task<AIAgent> CreateAsync()
         {
             var logger = _loggerFactory.CreateLogger<AIAgentFactory>();
 
@@ -69,7 +71,7 @@ namespace ChatAgentic.Services
                     {
                         Instructions = instructions,
                         MaxOutputTokens = 20_000,
-                        Tools = AIAgentInternalTools.GetTools(),
+                        Tools = [ ..AIAgentInternalTools.GetTools(), ..await _toolsFactory.CreateAsync() ],
                     }
                 },
                 loggerFactory: _loggerFactory);

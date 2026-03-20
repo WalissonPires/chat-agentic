@@ -37,6 +37,7 @@ builder.Services.Configure<AIProviderOptions>(builder.Configuration.GetSection("
 builder.Services.AddScoped<SpeechToTextService>();
 builder.Services.AddScoped<TextToSpeechService>();
 builder.Services.AddScoped<AIAgentFactory>();
+builder.Services.AddScoped<AIAgentToolsFactory>();
 builder.Services.AddTransient<MessageMediaStream>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
