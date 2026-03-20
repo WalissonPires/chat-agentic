@@ -81,9 +81,10 @@ namespace ChatAgentic.Models
                         msg.ContentText = $"Tool '{c.Name}' called. CallId: {c.CallId}";
                         break;
                     case FunctionResultContent c:
+                        var result = c.Result?.ToString() ?? string.Empty;
                         msg.Role = ChatRole.Tool.ToString();
                         msg.ContentType = MessageContentType.Text;
-                        msg.ContentText = $"Result for call tool '{c.CallId}': " + c.Result;
+                        msg.ContentText = $"Result for call tool '{c.CallId}': {result[..Math.Min(result.Length, 1000)]}.";
                         break;
                     default:
                         throw new NotSupportedException("Content type not supported: " + content.GetType().Name);

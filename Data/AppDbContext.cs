@@ -6,6 +6,8 @@ namespace ChatAgentic.Data
     public class AppDbContext(DbContextOptions options) : DbContext(options)
     {
         public DbSet<Workspace> Workspaces { get; set; }
+        public DbSet<Person> People { get; set; }
+        public DbSet<Contact> Contacts { get; set; }
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<ConversationMessage> ConversationMessages { get; set; }
 

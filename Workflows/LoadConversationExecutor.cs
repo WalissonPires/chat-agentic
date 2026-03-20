@@ -59,6 +59,16 @@ namespace ChatAgentic.Workflows
             else
                 _logger.LogDebug("Active conversation loaded. Conversation {conversationId}. {messagesCount} Messages", conversation.Id, conversation.Messages.Count);
 
+            var contact = await _dbContext.Contacts.AsNoTracking()
+                .Where(x => x.Person.WorkspaceId == message.WorkspaceId && x.Channel == message.Channel && x.Identifier == message.SenderIdentifier)
+                .Select(x => new
+                {
+                    x.PersonId,
+                    ContactId = x.Id,
+                    x.Person.Metadata
+                })
+                .FirstOrDefaultAsync(ct);
+
             ChatRole[] includeRoles = [ ChatRole.User, ChatRole.Assistant ];
 
             var weContext = new WorkflowExecutionContext(
@@ -66,6 +76,7 @@ namespace ChatAgentic.Workflows
                 ConversationId: conversation.Id,
                 Channel: message.Channel,
                 SenderIdentifier: message.SenderIdentifier,
+                ContactMetadata: contact?.Metadata ?? [],
                 ReceiveidAudio: message.ContentType == MessageContentType.Audio,
                 InputMessages: [ message ],
                 OutputMessages: [],

@@ -1,5 +1,6 @@
 using ChatAgentic.Channels;
 using ChatAgentic.Services;
+using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 
@@ -36,7 +37,12 @@ namespace ChatAgentic.Workflows
 
             weContexto.InputMessages.ForEach(msg => _logger.LogDebug("User message [{contentType}]:\r\n{contentText}", msg.ContentType, msg.ContentType == MessageContentType.Text ? msg.ContentText : msg.MediaUri));
 
-            var response = await aiAgent.RunAsync(messages);
+            var runOptions = new AgentRunOptions
+            {
+                AdditionalProperties = new (weContexto.ContactMetadata.Select(x => new KeyValuePair<string, object?>(x.Name, x.Value)))
+            };
+
+            var response = await aiAgent.RunAsync(messages, null, runOptions, ct);
 
             foreach (var msg in response.Messages)
                 weContexto.OutputMessages.Add(new ChatMessage(ChatRole.Assistant, msg.Contents));
@@ -45,7 +51,7 @@ namespace ChatAgentic.Workflows
 
             weContexto.OutputMessages.ForEach(msg => _logger.LogDebug("Assistent message:\r\n{contentText}", msg.Text));
 
-            await context.SendMessageAsync(weContexto);
+            await context.SendMessageAsync(weContexto, ct);
         }
     }
 }

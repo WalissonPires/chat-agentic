@@ -1,4 +1,5 @@
 using ChatAgentic.Channels;
+using ChatAgentic.Models;
 using Microsoft.Extensions.AI;
 
 namespace ChatAgentic.Workflows
@@ -8,6 +9,7 @@ namespace ChatAgentic.Workflows
         int ConversationId,
         ChannelType Channel,
         string SenderIdentifier,
+        List<PersonMetadataItem> ContactMetadata,
         bool ReceiveidAudio,
         List<Message> InputMessages,
         List<ChatMessage> OutputMessages,

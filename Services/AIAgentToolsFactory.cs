@@ -42,6 +42,7 @@ namespace ChatAgentic.Services
 
                 var mcpClient = await McpClient.CreateAsync(transport);
                 var mcpTools = await mcpClient.ListToolsAsync();
+                mcpTools = mcpTools.Select(tool => tool.WithName(new AgentToolFunctionName(key, tool.Name).GetFullName())).ToList();
                 tools.AddRange(mcpTools);
             }
 
@@ -67,5 +68,37 @@ namespace ChatAgentic.Services
     {
         Stdio = 1,
         SSE = 2
+    }
+
+    public class AgentToolFunctionName
+    {
+        private readonly string _mcp;
+        private readonly string _tool;
+
+        public string Mcp => _mcp;
+        public string ToolName => _tool;
+
+        public AgentToolFunctionName(string mcp, string tool)
+        {
+            _mcp = mcp;
+            _tool = tool;
+        }
+
+        public string GetFullName()
+        {
+            return _mcp + "__" + _tool;
+        }
+
+        public static bool TryFromFullName(string fullname, out AgentToolFunctionName name)
+        {
+            name = default!;
+
+            var split = fullname.Split("__", StringSplitOptions.RemoveEmptyEntries);
+            if (split.Length != 2)
+                return false;
+
+            name = new AgentToolFunctionName(split[0], split[1]);
+            return true;
+        }
     }
 }

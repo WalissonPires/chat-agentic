@@ -1,3 +1,4 @@
+using ChatAgentic.Workflows;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
@@ -74,7 +75,10 @@ namespace ChatAgentic.Services
                         Tools = [ ..AIAgentInternalTools.GetTools(), ..await _toolsFactory.CreateAsync() ],
                     }
                 },
-                loggerFactory: _loggerFactory);
+                loggerFactory: _loggerFactory)
+                .AsBuilder()
+                .Use(AIAgentMiddleware.InjectToolArguments)
+                .Build();
 
             logger.LogDebug("AI Agent Created '{aiAgentName}'", aiAgent.Name);
 

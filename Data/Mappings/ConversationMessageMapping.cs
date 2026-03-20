@@ -13,7 +13,7 @@ namespace ChatAgentic.Data.Mappings
             builder.Property(x => x.MessageId).HasMaxLength(50);
             builder.Property(x => x.Role).HasMaxLength(30);
             builder.Property(x => x.FileName).HasMaxLength(120);
-            builder.Property(x => x.ContentText).HasMaxLength(2000);
+            builder.Property(x => x.ContentText).HasMaxLength(5000);
             builder.Property(x => x.MediaUri).HasMaxLength(2000);
             builder.Property(x => x.MimeType).HasMaxLength(30);
 
