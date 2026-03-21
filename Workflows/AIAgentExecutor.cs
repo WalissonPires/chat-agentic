@@ -29,7 +29,7 @@ namespace ChatAgentic.Workflows
 
         private async ValueTask HandleAsync(WorkflowExecutionContext weContexto, IWorkflowContext context, CancellationToken ct)
         {
-            var aiAgent = await _aiAgentFactory.CreateAsync();
+            var aiAgent = await _aiAgentFactory.CreateAsync(weContexto.WorkspaceId);
 
             ChatMessage[] messages = [ ..weContexto.LastMessages, ..weContexto.InputMessages.Select(x => x.ToChatMessage()) ];
 

@@ -10,6 +10,7 @@ namespace ChatAgentic.Data
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<ConversationMessage> ConversationMessages { get; set; }
+        public DbSet<Knowledge> Knowledges { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

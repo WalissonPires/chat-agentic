@@ -39,11 +39,17 @@ builder.Services.AddScoped<TextToSpeechService>();
 builder.Services.AddScoped<AIAgentFactory>();
 builder.Services.AddScoped<AIAgentToolsFactory>();
 builder.Services.AddTransient<MessageMediaStream>();
+builder.Services.AddScoped<EmdeddingService>();
+builder.Services.AddScoped<TextSearchAdpter>();
+builder.Services.AddScoped<TextSearchProviderFactory>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetValue<string>("ConnectionString"))
-           .UseSnakeCaseNamingConvention();
+    options.UseNpgsql(
+        builder.Configuration.GetValue<string>("ConnectionString"),
+        x => x.UseVector()
+    )
+    .UseSnakeCaseNamingConvention();
 });
 
 var app = builder.Build();

@@ -7,5 +7,6 @@ namespace ChatAgentic.Services
         public string? ChatModel { get; set; }
         public string? TtsModel { get; set; }
         public string? TtsVoice { get; set; }
+        public string? EmbedModel { get; set; }
     }
 }

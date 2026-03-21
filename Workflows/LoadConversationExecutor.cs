@@ -47,7 +47,7 @@ namespace ChatAgentic.Workflows
                     Channel = message.Channel,
                     SenderIdentifier = message.SenderIdentifier,
                     CreatedAt = DateTime.UtcNow,
-                    ExpireAt = DateTime.UtcNow.AddMinutes(1),
+                    ExpireAt = DateTime.UtcNow.AddHours(1),
                     Messages = []
                 };
 

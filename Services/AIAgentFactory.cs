@@ -12,8 +12,9 @@ namespace ChatAgentic.Services
         private readonly OpenAIClient _aiClient;
         private readonly string _chatModel;
         private readonly AIAgentToolsFactory _toolsFactory;
+        private readonly TextSearchProviderFactory _textSearchProviderFactory;
 
-        public AIAgentFactory(IOptions<AIProviderOptions> aiProviderOptions, ILoggerFactory loggerFactory, AIAgentToolsFactory toolsFactory)
+        public AIAgentFactory(IOptions<AIProviderOptions> aiProviderOptions, ILoggerFactory loggerFactory, AIAgentToolsFactory toolsFactory, TextSearchProviderFactory textSearchProviderFactory)
         {
             var apiKey = aiProviderOptions.Value.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
             var model = aiProviderOptions.Value.ChatModel ?? throw new Exception("AIProvider ChatModel not defined.");
@@ -22,9 +23,10 @@ namespace ChatAgentic.Services
             _chatModel = model;
             _loggerFactory = loggerFactory;
             _toolsFactory = toolsFactory;
+            _textSearchProviderFactory = textSearchProviderFactory;
         }
 
-        public async Task<AIAgent> CreateAsync()
+        public async Task<AIAgent> CreateAsync(int workspaceId)
         {
             var logger = _loggerFactory.CreateLogger<AIAgentFactory>();
 
@@ -47,11 +49,26 @@ namespace ChatAgentic.Services
             Diretrizes:
 
             * Seja claro, direto e útil
-            * Prefira respostas curtas
+            * Prefira respostas curtas (Max. 4000 caracteres)
             * Use passo a passo quando necessário
             * Foque sempre em resolver o problema do usuário
             * Formate as mensagens para facil leitura no whatsapp
             * Não cite nas resposas o uso de tools
+            * Use os seguintes cards da dashbord na tool:
+                - card_categories: Valor total despesas de um mês/ano especifico
+                - card_tags: Valor total despesas de um mês/ano especifico
+                - card_payments: Valor total despesas de um mês/ano especifico
+                - card_participants: Valor total despesas de um mês/ano especifico
+                - card_future_expenses: Valor total todas as despesas futuras registradas
+                - card_expenses_in_year: Valor total despesas dos ultimos 12 meses
+                - card_categories_in_year: Valor total despesas dos ultimos 12 meses
+                - card_tags_in_year: Valor total despesas dos ultimos 12 meses
+                - card_expenses_daily_average
+                - card_expenses_forecast: Previsão do Valor total das despesas futuras
+            * Para saber qual o participante_id do usuário chame a tool account_me_get. Na propriedade config tem uma string JSON que é um objeto com: { "participant_id": valor }
+            * Para listar despesas formate cada despesa em duas linhas assim:
+                *Descrição index/installment_count* - R$ 100,00
+                MetodoPag, Categoria, Tags
 
             Uso de tools:
 
@@ -72,8 +89,18 @@ namespace ChatAgentic.Services
                     {
                         Instructions = instructions,
                         MaxOutputTokens = 20_000,
-                        Tools = [ ..AIAgentInternalTools.GetTools(), ..await _toolsFactory.CreateAsync() ],
-                    }
+                        Tools = [.. AIAgentInternalTools.GetTools(), .. await _toolsFactory.CreateAsync()],
+                    },
+                    AIContextProviders =
+                    [
+                        _textSearchProviderFactory.Create(new (
+                            WorkspaceId: workspaceId,
+                            Context: "midesp",
+                            ToolName: "midesp_knowledge",
+                            ToolDescription: "Base de conhecimento do Midesp. Use para obter informações relacionadas ao Midesp",
+                            SearchTime: TextSearchProviderOptions.TextSearchBehavior.OnDemandFunctionCalling
+                        ))
+                    ]
                 },
                 loggerFactory: _loggerFactory)
                 .AsBuilder()
