@@ -1,8 +1,10 @@
 using System.Text.Json;
 using ChatAgentic.Channels;
 using ChatAgentic.Data;
+using ChatAgentic.Models;
 using ChatAgentic.Services;
 using ChatAgentic.Workflows;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,9 +41,12 @@ builder.Services.AddScoped<TextToSpeechService>();
 builder.Services.AddScoped<AIAgentFactory>();
 builder.Services.AddScoped<AIAgentToolsFactory>();
 builder.Services.AddTransient<MessageMediaStream>();
-builder.Services.AddScoped<EmdeddingService>();
+builder.Services.AddScoped<EmbeddingService>();
 builder.Services.AddScoped<TextSearchAdpter>();
 builder.Services.AddScoped<TextSearchProviderFactory>();
+
+builder.Services.AddScoped<DocumentExtractor>();
+builder.Services.AddScoped<KnowledgeBaseIngestor>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -69,4 +74,31 @@ app.MapPost("/webhook/{channel}/{token}", async (string channel, string token, J
     await messageProcessor.Execute(new(channelType, token, body.ToString()));
 });
 
+app.MapPost("/knowledge/ingestion", async ([FromForm]KnowledgeIngestionDTO dto, KnowledgeBaseIngestor ingestor) =>
+{
+    if (dto.File == null)
+        return Results.BadRequest(new { Message = "File is required" });
+
+    await ingestor.ExecuteAsync(new KnowledgeBaseIngestorInput(
+        Context: dto.Context ?? Knowledge.DefaultContext,
+        ChunkerType: dto.ChunkerType,
+        ClearText: dto.ClearText ?? false,
+        Token: dto.Token ?? string.Empty,
+        Filename: dto.File.FileName,
+        File: dto.File.OpenReadStream()
+    ));
+
+    return Results.Ok();
+})
+.DisableAntiforgery();
+
 app.Run();
+
+public class KnowledgeIngestionDTO
+{
+    public string? Context { get; set; }
+    public ChunkerType ChunkerType { get; set; }
+    public bool? ClearText { get; set; }
+    public string? Token { get; set; }
+    public IFormFile? File { get; set; }
+}

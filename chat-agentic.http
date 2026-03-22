@@ -1,6 +1,31 @@
-@baseUrl = http://localhost:5036
+@baseUrl = http://localhost:5010
 
 GET {{baseUrl}}/
 Accept: application/json
 
 ###
+POST {{baseUrl}}/knowledge/ingestion
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="context"
+
+midesp
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="token"
+
+test-token
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkerType"
+
+Markdown
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="clearText"
+
+false
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="midesp-guia.md"
+Content-Type: text/plan
+
+< ./.docs/midesp-guia.md
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

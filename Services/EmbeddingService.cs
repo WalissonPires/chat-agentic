@@ -4,11 +4,11 @@ using OpenAI;
 
 namespace ChatAgentic.Services
 {
-    public class EmdeddingService
+    public class EmbeddingService
     {
         private readonly IEmbeddingGenerator<string, Embedding<float>> _embedGenerator;
 
-        public EmdeddingService(IOptions<AIProviderOptions> options)
+        public EmbeddingService(IOptions<AIProviderOptions> options)
         {
             var apiKey = options.Value.ApiKey ?? throw new Exception("AIProvider ApiKey is empty");
             var emdedModel = options.Value.EmbedModel ?? throw new Exception("AIProvider EmbedModel is empty");

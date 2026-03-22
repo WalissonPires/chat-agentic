@@ -35,7 +35,7 @@ namespace ChatAgentic.Channels
             var workspaceId = await _dbContext.Workspaces.Where(x => x.WebhookToken == input.Token).Select(x => x.Id).FirstOrDefaultAsync();
             if (workspaceId == default)
             {
-                _logger.LogDebug("Webhook token not found");
+                _logger.LogError("Webhook token not found");
                 return;
             }
 

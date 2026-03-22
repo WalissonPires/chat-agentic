@@ -3,6 +3,7 @@ using System;
 using ChatAgentic.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using Pgvector;
 namespace ChatAgentic.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322145851_AddKnowledgeCreatedAt")]
+    partial class AddKnowledgeCreatedAt
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -257,11 +260,6 @@ namespace ChatAgentic.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("IntegrationToken")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("integration_token");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(60)
@@ -275,9 +273,6 @@ namespace ChatAgentic.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_workspaces");
-
-                    b.HasIndex("IntegrationToken")
-                        .HasDatabaseName("ix_workspaces_integration_token");
 
                     b.HasIndex("WebhookToken")
                         .HasDatabaseName("ix_workspaces_webhook_token");

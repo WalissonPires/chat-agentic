@@ -10,9 +10,9 @@ namespace ChatAgentic.Services
     {
         private readonly ILogger _logger;
         private readonly AppDbContext _dbContext;
-        private readonly EmdeddingService _embedService;
+        private readonly EmbeddingService _embedService;
 
-        public TextSearchAdpter(ILogger<TextSearchAdpter> logger, AppDbContext dbContext, EmdeddingService embedService)
+        public TextSearchAdpter(ILogger<TextSearchAdpter> logger, AppDbContext dbContext, EmbeddingService embedService)
         {
             _dbContext = dbContext;
             _logger = logger;

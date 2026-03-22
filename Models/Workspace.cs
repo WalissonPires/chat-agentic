@@ -5,6 +5,7 @@ namespace ChatAgentic.Models
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? WebhookToken { get; set; }
+        public string? IntegrationToken { get; set; }
         public WorkspaceMetadata? Metadata { get; set; }
     }
 
