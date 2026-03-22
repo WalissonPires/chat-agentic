@@ -17,7 +17,7 @@ namespace ChatAgentic.Services
         public async Task<List<AITool>> CreateAsync()
         {
             var tools = new List<AITool>();
-            var appToolsPath = Path.Combine(Directory.GetCurrentDirectory(), ".app-tools");
+            var appToolsPath = Path.Combine(Directory.GetCurrentDirectory(), ".agent", "tools");
 
             foreach (var (key, value) in _tools.Where(x => x.Value.Enabled).ToArray())
             {

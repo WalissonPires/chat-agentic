@@ -12,9 +12,11 @@ namespace ChatAgentic.Services
         private readonly OpenAIClient _aiClient;
         private readonly string _chatModel;
         private readonly AIAgentToolsFactory _toolsFactory;
+        private readonly AIAgentSkillsFactory _skillsFactory;
         private readonly TextSearchProviderFactory _textSearchProviderFactory;
 
-        public AIAgentFactory(IOptions<AIProviderOptions> aiProviderOptions, ILoggerFactory loggerFactory, AIAgentToolsFactory toolsFactory, TextSearchProviderFactory textSearchProviderFactory)
+        public AIAgentFactory(IOptions<AIProviderOptions> aiProviderOptions, ILoggerFactory loggerFactory, AIAgentToolsFactory toolsFactory,
+            AIAgentSkillsFactory skillsFactory, TextSearchProviderFactory textSearchProviderFactory)
         {
             var apiKey = aiProviderOptions.Value.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
             var model = aiProviderOptions.Value.ChatModel ?? throw new Exception("AIProvider ChatModel not defined.");
@@ -23,6 +25,7 @@ namespace ChatAgentic.Services
             _chatModel = model;
             _loggerFactory = loggerFactory;
             _toolsFactory = toolsFactory;
+            _skillsFactory = skillsFactory;
             _textSearchProviderFactory = textSearchProviderFactory;
         }
 
@@ -34,7 +37,7 @@ namespace ChatAgentic.Services
 
             var instructions =
             """
-            Você é a Erza, uma assistente do Midesp. Midesp é uma plataforma que ajuda usuários a gerenciar suas despesas.
+            Você é a Sakura, uma assistente do Midesp. Midesp é uma plataforma que ajuda usuários a gerenciar suas despesas.
 
             Seu papel é ajudar o usuário a entender, usar e resolver tarefas no Midesp.
 
@@ -53,22 +56,8 @@ namespace ChatAgentic.Services
             * Use passo a passo quando necessário
             * Foque sempre em resolver o problema do usuário
             * Formate as mensagens para facil leitura no whatsapp
-            * Não cite nas resposas o uso de tools
-            * Use os seguintes cards da dashbord na tool:
-                - card_categories: Valor total despesas de um mês/ano especifico
-                - card_tags: Valor total despesas de um mês/ano especifico
-                - card_payments: Valor total despesas de um mês/ano especifico
-                - card_participants: Valor total despesas de um mês/ano especifico
-                - card_future_expenses: Valor total todas as despesas futuras registradas
-                - card_expenses_in_year: Valor total despesas dos ultimos 12 meses
-                - card_categories_in_year: Valor total despesas dos ultimos 12 meses
-                - card_tags_in_year: Valor total despesas dos ultimos 12 meses
-                - card_expenses_daily_average
-                - card_expenses_forecast: Previsão do Valor total das despesas futuras
-            * Para saber qual o participante_id do usuário chame a tool account_me_get. Na propriedade config tem uma string JSON que é um objeto com: { "participant_id": valor }
-            * Para listar despesas formate cada despesa em duas linhas assim:
-                *Descrição index/installment_count* - R$ 100,00
-                MetodoPag, Categoria, Tags
+            * Não cite nas resposas o uso de tools e skills
+            * De preferencia no uso de skills para executar uma tarefa
 
             Uso de tools:
 
@@ -84,7 +73,7 @@ namespace ChatAgentic.Services
                 .GetChatClient(_chatModel)
                 .AsAIAgent(new ChatClientAgentOptions
                 {
-                    Name = "Erza AI Assistent",
+                    Name = "3AI Assistent",
                     ChatOptions = new Microsoft.Extensions.AI.ChatOptions
                     {
                         Instructions = instructions,
@@ -93,6 +82,7 @@ namespace ChatAgentic.Services
                     },
                     AIContextProviders =
                     [
+                        _skillsFactory.Create(),
                         _textSearchProviderFactory.Create(new (
                             WorkspaceId: workspaceId,
                             Context: "midesp",

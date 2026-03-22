@@ -40,6 +40,7 @@ builder.Services.AddScoped<SpeechToTextService>();
 builder.Services.AddScoped<TextToSpeechService>();
 builder.Services.AddScoped<AIAgentFactory>();
 builder.Services.AddScoped<AIAgentToolsFactory>();
+builder.Services.AddScoped<AIAgentSkillsFactory>();
 builder.Services.AddTransient<MessageMediaStream>();
 builder.Services.AddScoped<EmbeddingService>();
 builder.Services.AddScoped<TextSearchAdpter>();
