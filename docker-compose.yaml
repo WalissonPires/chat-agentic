@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    container_name: chatagentic-postgres
+    image: ankane/pgvector:latest
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: masterkey
+      POSTGRES_DB: chatagentic
+    ports:
+      - "15432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - chatagentic_net
+
+networks:
+  chatagentic_net:
+
+volumes:
+  pgdata:
