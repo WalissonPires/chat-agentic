@@ -193,3 +193,46 @@ ngrok http 5010
 ```
 
 Em desenvolvimento, a documentação OpenAPI fica disponível em http://localhost:5010/openapi/v1.json.
+
+---
+
+## Executar a API usando docker
+
+### Construir a imagem localmente
+
+Na raiz do projeto execute:
+
+```bash
+docker build -t chat-agentic:local .
+```
+
+### Executar com `docker run` e variáveis de ambiente
+
+Exemplo em um único comando (Linux, macOS ou Git Bash no Windows), com Postgres acessível na máquina host na porta publicada `15432` (por exemplo após `docker compose up`):
+
+```bash
+docker run -d --name chat-agentic \
+  -p 8080:8080 \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  -e ConnectionString="Host=host.docker.internal;Port=15432;Database=chatagentic;Username=postgres;Password=SUA_SENHA_POSTGRES" \
+  -e EvolutionApi__ServerUrl="https://sua-evolution-api" \
+  -e EvolutionApi__ApiKey="SUA_CHAVE_EVOLUTION" \
+  -e EvolutionApi__Instance="SUA_INSTANCIA" \
+  -e AIProvider__ApiKey="SUA_CHAVE_OPENAI_COMPATIVEL" \
+  -e AIProvider__Endpoint="https://api.openai.com/v1" \
+  -e AIProvider__ChatModel="gpt-5-nano" \
+  -e AIProvider__ImageModel="dall-e-3" \
+  -e AIProvider__EmbedModel="text-embedding-3-small" \
+  -e AIProvider__TranscriptionModel="whisper-1" \
+  -e AIProvider__TtsModel="tts-1" \
+  -e AIProvider__TtsVoice="alloy" \
+  seuusuario/chat-agentic:latest
+```
+
+- Se o Postgres rodar **em outro container** na mesma rede Docker, use o nome do serviço como host (por exemplo `Host=postgres;Port=5432;...`) e conecte os containers com `--network` adequado em vez de `host.docker.internal`.
+
+Para inspecionar logs:
+
+```bash
+docker logs -f chat-agentic
+```
