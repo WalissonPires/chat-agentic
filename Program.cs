@@ -1,9 +1,15 @@
 using System.Text.Json;
-using ChatAgentic.Channels;
-using ChatAgentic.Data;
-using ChatAgentic.Models;
-using ChatAgentic.Services;
-using ChatAgentic.Workflows;
+using ChatAgentic.Entities;
+using ChatAgentic.Features.AI;
+using ChatAgentic.Features.AI.Agent;
+using ChatAgentic.Features.Channels;
+using ChatAgentic.Features.Channels.Whatsapp;
+using ChatAgentic.Features.Knowledgebase;
+using ChatAgentic.Features.Workflows;
+using ChatAgentic.Features.Workflows.Executors;
+using ChatAgentic.Persistence;
+using ChatAgentic.Queue;
+using ChatAgentic.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -94,12 +100,3 @@ app.MapPost("/knowledge/ingestion", async ([FromForm]KnowledgeIngestionDTO dto, 
 .DisableAntiforgery();
 
 app.Run();
-
-public class KnowledgeIngestionDTO
-{
-    public string? Context { get; set; }
-    public ChunkerType ChunkerType { get; set; }
-    public bool? ClearText { get; set; }
-    public string? Token { get; set; }
-    public IFormFile? File { get; set; }
-}
