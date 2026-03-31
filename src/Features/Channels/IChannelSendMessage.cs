@@ -9,6 +9,7 @@ namespace ChatAgentic.Features.Channels
 
     public record ChannelSendMessageInput(
         string SenderIdentifier,
+        string? ChatId,
         ChatMessage Message
     );
 }

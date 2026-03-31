@@ -1,3 +1,4 @@
+using ChatAgentic.Features.Channels.Telegram;
 using ChatAgentic.Features.Channels.Whatsapp;
 
 namespace ChatAgentic.Features.Channels
@@ -16,6 +17,7 @@ namespace ChatAgentic.Features.Channels
             return channel switch
             {
                 ChannelType.Whatsapp => _serviceProvider.GetRequiredService<WhatsappMessageTransform>(),
+                ChannelType.Telegram => _serviceProvider.GetRequiredService<TelegramMessageTransform>(),
                 _ => throw new Exception("Invalid channel " + channel)
             };
         }

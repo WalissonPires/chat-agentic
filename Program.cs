@@ -3,6 +3,7 @@ using ChatAgentic.Entities;
 using ChatAgentic.Features.AI;
 using ChatAgentic.Features.AI.Agent;
 using ChatAgentic.Features.Channels;
+using ChatAgentic.Features.Channels.Telegram;
 using ChatAgentic.Features.Channels.Whatsapp;
 using ChatAgentic.Features.Knowledgebase;
 using ChatAgentic.Features.Workflows;
@@ -24,11 +25,15 @@ builder.Services.AddHttpClient();
 
 builder.Services.Configure<EvolutionApiOptions>(builder.Configuration.GetSection("EvolutionApi"));
 builder.Services.AddScoped<EvolutionApiClient>();
+builder.Services.Configure<TelegramApiOptions>(builder.Configuration.GetSection("TelegramApi"));
+builder.Services.AddScoped<TelegramApiClient>();
 
 builder.Services.AddScoped<ChannelMessageTransformFactory>();
 builder.Services.AddScoped<WhatsappMessageTransform>();
+builder.Services.AddScoped<TelegramMessageTransform>();
 builder.Services.AddScoped<ChannelSendMessageFactory>();
 builder.Services.AddScoped<WhatsappSendMessage>();
+builder.Services.AddScoped<TelegramSendMessage>();
 builder.Services.AddScoped<WebhookMessageProcessor>();
 
 builder.Services.AddSingleton<IMessageQueue<Message>, InMemoryMessageQueue<Message>>();

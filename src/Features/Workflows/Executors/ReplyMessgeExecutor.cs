@@ -36,14 +36,14 @@ namespace ChatAgentic.Features.Workflows.Executors
             {
                 foreach (var message in weContext.OutputAudioMessages)
                 {
-                    await sendMesage.ExecuteAsync(new(weContext.SenderIdentifier, message), ct);
+                    await sendMesage.ExecuteAsync(new(weContext.SenderIdentifier, weContext.ChatId, message), ct);
                 }
             }
             else
             {
                 foreach (var message in weContext.OutputMessages)
                 {
-                    await sendMesage.ExecuteAsync(new(weContext.SenderIdentifier, message), ct);
+                    await sendMesage.ExecuteAsync(new(weContext.SenderIdentifier, weContext.ChatId, message), ct);
                 }
             }
 

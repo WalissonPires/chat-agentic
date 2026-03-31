@@ -2,6 +2,7 @@ namespace ChatAgentic.Features.Channels
 {
     public enum ChannelType
     {
-        Whatsapp = 1
+        Whatsapp = 1,
+        Telegram = 2
     }
 }

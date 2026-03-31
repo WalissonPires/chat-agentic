@@ -36,7 +36,7 @@ namespace ChatAgentic.Features.Workflows.Executors
             var conversation = await _dbContext.Conversations.AsNoTracking()
                 .Include(x => x.Messages)
                 .Where(x => x.WorkspaceId == message.WorkspaceId && x.Channel == message.Channel && x.SenderIdentifier == message.SenderIdentifier && x.ExpireAt > DateTime.UtcNow)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(ct);
 
             if (conversation == null)
             {
@@ -47,6 +47,7 @@ namespace ChatAgentic.Features.Workflows.Executors
                     WorkspaceId = message.WorkspaceId,
                     Channel = message.Channel,
                     SenderIdentifier = message.SenderIdentifier,
+                    ChatId = message.ChatId,
                     CreatedAt = DateTime.UtcNow,
                     ExpireAt = DateTime.UtcNow.AddHours(1),
                     Messages = []
@@ -77,6 +78,7 @@ namespace ChatAgentic.Features.Workflows.Executors
                 ConversationId: conversation.Id,
                 Channel: message.Channel,
                 SenderIdentifier: message.SenderIdentifier,
+                ChatId: message.ChatId,
                 ContactMetadata: contact?.Metadata ?? [],
                 ReceiveidAudio: message.ContentType == MessageContentType.Audio,
                 InputMessages: [ message ],

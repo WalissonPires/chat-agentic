@@ -41,7 +41,7 @@ namespace ChatAgentic.Features.Channels.Whatsapp
             var media = new MemoryStream(Convert.FromBase64String(result.Base64));
 
             return new EvolutionMedia(
-                MimeType: result.Mimetype ?? "octet/stream",
+                MimeType: result.Mimetype ?? "application/octet-stream",
                 Filename: result.FileName ?? string.Empty,
                 Media: media
             );

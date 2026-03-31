@@ -11,13 +11,11 @@ namespace ChatAgentic.Features.Channels.Whatsapp
         };
 
         private readonly ILogger _logger;
-        private readonly AppDbContext _dbContext;
         private readonly EvolutionApiClient _evolutionClient;
 
-        public WhatsappMessageTransform(ILogger<WhatsappMessageTransform> logger, AppDbContext dbContext, EvolutionApiClient evolutionClient)
+        public WhatsappMessageTransform(ILogger<WhatsappMessageTransform> logger, EvolutionApiClient evolutionClient)
         {
             _logger = logger;
-            _dbContext = dbContext;
             _evolutionClient = evolutionClient;
         }
 
@@ -61,10 +59,11 @@ namespace ChatAgentic.Features.Channels.Whatsapp
             if (contentType is  MessageContentType.Audio or MessageContentType.Image or MessageContentType.Document)
             {
                 var mediaResult = await _evolutionClient.DownloadMediaAsync(data.Key?.Id ?? string.Empty);
+                using var mediaStream = mediaResult.Media;
 
                 var filename = Path.GetTempFileName();
                 using var fileStream = File.Open(filename, FileMode.Create);
-                await mediaResult.Media.CopyToAsync(fileStream);
+                await mediaStream.CopyToAsync(fileStream);
                 mediaUri = "file://" + filename;
             }
 
@@ -72,6 +71,7 @@ namespace ChatAgentic.Features.Channels.Whatsapp
                 WorkspaceId: input.WorkspaceId,
                 Channel: ChannelType.Whatsapp,
                 SenderIdentifier: phone,
+                ChatId: null,
                 ContentType: contentType,
                 ContentText: contentText,
                 MediaUri: mediaUri,

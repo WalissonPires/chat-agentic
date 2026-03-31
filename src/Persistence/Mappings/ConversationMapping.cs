@@ -11,6 +11,7 @@ namespace ChatAgentic.Persistence.Mappings
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.SenderIdentifier).HasMaxLength(32).IsRequired();
+            builder.Property(x => x.ChatId).HasMaxLength(32).IsRequired();
 
             builder.HasOne(x => x.Workspace).WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
 

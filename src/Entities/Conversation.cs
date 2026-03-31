@@ -9,6 +9,7 @@ namespace ChatAgentic.Entities
         public DateTime ExpireAt { get; set; }
         public ChannelType Channel { get; set; }
         public string SenderIdentifier { get; set; } = string.Empty;
+        public string? ChatId { get; set; }
 
         public int WorkspaceId { get; set; }
         public Workspace Workspace { get; set; } = default!;

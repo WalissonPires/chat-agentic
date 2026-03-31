@@ -33,7 +33,7 @@ Todo o fluxo respeita o **workspace** como fronteira: pessoas, contatos por cana
 | Runtime e API | C#, **.NET 10**, ASP.NET Core |
 | Agentes e workflows | **Microsoft Agent Framework** (pacotes `Microsoft.Agents.AI.*` — OpenAI e Workflows) |
 | Persistência | **PostgreSQL** com Entity Framework Core; extensão **pgvector** para embeddings e busca vetorial |
-| Integração de canais | Webhooks genéricos por tipo de canal; exemplo de envio/recebimento via Evolution API (WhatsApp) |
+| Integração de canais | Webhooks genéricos por tipo de canal; envio/recebimento via Evolution API (WhatsApp) e Telegram Bot API |
 
 ### Recursos do agente
 
@@ -176,7 +176,8 @@ docker compose up -d
 1. Copie o `appsettings.json` com o nome de `appsettings.Development.json`.
 2. Defina `ConnectionString` apontando para o Postgres (host `localhost`, porta alinhada ao Compose, por exemplo `15432`).
 3. Configure `AIProvider` (chave de API, endpoint compatível com OpenAI, modelos de chat, embedding, transcrição e TTS conforme necessário).
-4. Configure `EvolutionApi` (ou o conector do canal em uso): URL do servidor, chave e instância.
+4. Configure `EvolutionApi` (se usar WhatsApp): URL do servidor, chave e instância.
+5. Configure `TelegramApi` (se usar Telegram): token do bot (`BotToken`), e `BaseUrl`/`FileBaseUrl`.
 
 ### Executar a API
 
@@ -193,6 +194,15 @@ ngrok http 5010
 ```
 
 Em desenvolvimento, a documentação OpenAPI fica disponível em http://localhost:5010/openapi/v1.json.
+
+### Configuração de webhook no Telegram
+
+Com o bot criado no Telegram, configure o webhook para a URL da API:
+
+```bash
+curl -X POST "https://api.telegram.org/bot<SEU_BOT_TOKEN>/setWebhook" \
+  -d "url=https://SEU_DOMINIO/webhook/telegram/<TOKEN_DO_WORKSPACE>"
+```
 
 ---
 
@@ -218,6 +228,9 @@ docker run -d --name chat-agentic \
   -e EvolutionApi__ServerUrl="https://sua-evolution-api" \
   -e EvolutionApi__ApiKey="SUA_CHAVE_EVOLUTION" \
   -e EvolutionApi__Instance="SUA_INSTANCIA" \
+  -e TelegramApi__BotToken="SEU_BOT_TOKEN" \
+  -e TelegramApi__BaseUrl="https://api.telegram.org" \
+  -e TelegramApi__FileBaseUrl="https://api.telegram.org/file" \
   -e AIProvider__ApiKey="SUA_CHAVE_OPENAI_COMPATIVEL" \
   -e AIProvider__Endpoint="https://api.openai.com/v1" \
   -e AIProvider__ChatModel="gpt-5-nano" \

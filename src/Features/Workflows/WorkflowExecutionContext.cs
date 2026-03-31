@@ -9,6 +9,7 @@ namespace ChatAgentic.Features.Workflows
         int ConversationId,
         ChannelType Channel,
         string SenderIdentifier,
+        string? ChatId,
         List<PersonMetadataItem> ContactMetadata,
         bool ReceiveidAudio,
         List<Message> InputMessages,

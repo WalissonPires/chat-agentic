@@ -29,3 +29,22 @@ Content-Type: text/plan
 
 < ./.docs/midesp-guia.md
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+
+
+### Telegram params
+@telegramBotToken = BOT_TOKEN
+@telegramApiUrl = https://api.telegram.org
+
+### Register webhook telegram
+POST {{telegramApiUrl}}/bot{{telegramBotToken}}/setWebhook
+Content-Type: application/json
+
+{
+  "url": "https://chatagent-api/webhook/telegram/TOKEN"
+}
+
+### Get webhook info telegram
+GET {{telegramApiUrl}}/bot{{telegramBotToken}}/getWebhookInfo
+Accept: application/json

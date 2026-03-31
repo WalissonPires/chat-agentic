@@ -6,6 +6,7 @@ namespace ChatAgentic.Features.Channels
         int WorkspaceId,
         ChannelType Channel,
         string SenderIdentifier,
+        string? ChatId,
         MessageContentType ContentType,
         string ContentText,
         string? MediaUri = null,
