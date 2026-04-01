@@ -26,6 +26,8 @@ Essa separação entre recepção HTTP e processamento permite escalar o trabalh
 
 Todo o fluxo respeita o **workspace** como fronteira: pessoas, contatos por canal e fragmentos de conhecimento (com seu **contexto** lógico) pertencem a um único workspace. Webhooks e ingestão de documentos devem ser configurados de forma que mensagens e arquivos caiam no tenant correto, preservando isolamento entre ambientes.
 
+As credenciais e parâmetros do **provedor de IA** (OpenAI ou compatível), da **Evolution API** (WhatsApp) e da **Telegram Bot API** ficam no campo JSON **`metadata`** de cada workspace no banco de dados.
+
 ### Stack
 
 | Área | Tecnologia |
@@ -175,9 +177,40 @@ docker compose up -d
 
 1. Copie o `appsettings.json` com o nome de `appsettings.Development.json`.
 2. Defina `ConnectionString` apontando para o Postgres (host `localhost`, porta alinhada ao Compose, por exemplo `15432`).
-3. Configure `AIProvider` (chave de API, endpoint compatível com OpenAI, modelos de chat, embedding, transcrição e TTS conforme necessário).
-4. Configure `EvolutionApi` (se usar WhatsApp): URL do servidor, chave e instância.
-5. Configure `TelegramApi` (se usar Telegram): token do bot (`BotToken`), e `BaseUrl`/`FileBaseUrl`.
+
+### Configuração por workspace (`metadata`)
+
+Para cada `workspaces`, preencha a coluna JSON **`metadata`** com os blocos que o tenant usar.
+
+Exemplo ilustrativo (ajuste valores e omita blocos de canais que não usar):
+
+```json
+{
+    "EvolutionApi": {
+        "ServerUrl": "https://evoapi-server.com.br",
+        "ApiKey": "TOKEN",
+        "Instance": "INSTANCE_NAME"
+    },
+    "Telegram": {
+        "BotToken": "TOKEN",
+        "BaseUrl": "https://api.telegram.org",
+        "FileBaseUrl": "https://api.telegram.org/file"
+    },
+    "AIProvider": {
+        "ApiKey": "TOKEN",
+        "Endpoint": "https://api.openai.com/v1",
+        "ChatModel": "gpt-5-nano",
+        "ImageModel": "dall-e-3",
+        "EmbedModel": "text-embedding-3-small",
+        "TranscriptionModel": "whisper-1",
+        "TtsModel": "tts-1",
+        "TtsVoice": "alloy"
+    }
+}
+```
+
+- **Webhook**: o workspace precisa de `webhook_token` coerente com a URL `/webhook/{channel}/{token}`.
+- **Ingestão de conhecimento**: use `integration_token` no formulário multipart; o servidor resolve o workspace e aplica o mesmo `metadata` para gerar embeddings.
 
 ### Executar a API
 
@@ -225,20 +258,6 @@ docker run -d --name chat-agentic \
   -p 8080:8080 \
   -e ASPNETCORE_ENVIRONMENT=Production \
   -e ConnectionString="Host=host.docker.internal;Port=15432;Database=chatagentic;Username=postgres;Password=SUA_SENHA_POSTGRES" \
-  -e EvolutionApi__ServerUrl="https://sua-evolution-api" \
-  -e EvolutionApi__ApiKey="SUA_CHAVE_EVOLUTION" \
-  -e EvolutionApi__Instance="SUA_INSTANCIA" \
-  -e TelegramApi__BotToken="SEU_BOT_TOKEN" \
-  -e TelegramApi__BaseUrl="https://api.telegram.org" \
-  -e TelegramApi__FileBaseUrl="https://api.telegram.org/file" \
-  -e AIProvider__ApiKey="SUA_CHAVE_OPENAI_COMPATIVEL" \
-  -e AIProvider__Endpoint="https://api.openai.com/v1" \
-  -e AIProvider__ChatModel="gpt-5-nano" \
-  -e AIProvider__ImageModel="dall-e-3" \
-  -e AIProvider__EmbedModel="text-embedding-3-small" \
-  -e AIProvider__TranscriptionModel="whisper-1" \
-  -e AIProvider__TtsModel="tts-1" \
-  -e AIProvider__TtsVoice="alloy" \
   seuusuario/chat-agentic:latest
 ```
 

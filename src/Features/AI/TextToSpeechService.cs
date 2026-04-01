@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Audio;
 
@@ -9,11 +8,11 @@ public sealed class TextToSpeechService
     private readonly AudioClient _audioClient;
     private readonly GeneratedSpeechVoice _voice;
 
-    public TextToSpeechService(IOptions<AIProviderOptions> aiProviderOptions)
+    public TextToSpeechService(AIProviderOptions aiProviderOptions)
     {
-        var apiKey = aiProviderOptions.Value.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
-        var model = aiProviderOptions.Value.TtsModel ?? throw new Exception("AIProvider TtsModel not defined.");
-        var voice = aiProviderOptions.Value.TtsVoice ?? throw new Exception("AIProvider TtsVoice not defined.");
+        var apiKey = aiProviderOptions.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
+        var model = aiProviderOptions.TtsModel ?? throw new Exception("AIProvider TtsModel not defined.");
+        var voice = aiProviderOptions.TtsVoice ?? throw new Exception("AIProvider TtsVoice not defined.");
 
         _audioClient = new OpenAIClient(apiKey).GetAudioClient(model);
 

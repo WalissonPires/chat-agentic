@@ -2,7 +2,6 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using ChatAgentic.Utils;
-using Microsoft.Extensions.Options;
 
 namespace ChatAgentic.Features.Channels.Telegram
 {
@@ -11,11 +10,11 @@ namespace ChatAgentic.Features.Channels.Telegram
         private readonly HttpClient _client;
         private readonly string _fileBaseUrl;
 
-        public TelegramApiClient(IOptions<TelegramApiOptions> options, IHttpClientFactory httpClientFactory)
+        public TelegramApiClient(TelegramApiOptions options, IHttpClientFactory httpClientFactory)
         {
-            var botToken = options.Value.BotToken ?? throw new Exception("BotToken is empty");
-            var baseUrl = options.Value.BaseUrl ?? throw new Exception("BaseUrl is empty");
-            _fileBaseUrl = options.Value.FileBaseUrl ?? throw new Exception("FileBaseUrl is empty");
+            var botToken = options.BotToken ?? throw new Exception("BotToken is empty");
+            var baseUrl = options.BaseUrl ?? throw new Exception("BaseUrl is empty");
+            _fileBaseUrl = options.FileBaseUrl ?? throw new Exception("FileBaseUrl is empty");
 
             _client = httpClientFactory.CreateClient();
             _client.BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/bot{botToken}/");

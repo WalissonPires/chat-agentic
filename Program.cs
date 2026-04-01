@@ -8,6 +8,7 @@ using ChatAgentic.Features.Channels.Whatsapp;
 using ChatAgentic.Features.Knowledgebase;
 using ChatAgentic.Features.Workflows;
 using ChatAgentic.Features.Workflows.Executors;
+using ChatAgentic.Features.Workspaces;
 using ChatAgentic.Persistence;
 using ChatAgentic.Queue;
 using ChatAgentic.Utils;
@@ -22,10 +23,24 @@ builder.Logging.AddConsole();
 builder.Services.AddOpenApi();
 builder.Services.AddHttpClient();
 
-
-builder.Services.Configure<EvolutionApiOptions>(builder.Configuration.GetSection("EvolutionApi"));
+builder.Services.AddScoped<WorkspaceContext>();
+builder.Services.AddScoped<WorkspaceLoader>();
+builder.Services.AddScoped<AIProviderOptions>(sp =>
+{
+    var ctx = sp.GetRequiredService<WorkspaceContext>();
+    return ctx.Metadata.AIProvider ?? throw new InvalidOperationException("AI provider is not configured on workspace metadata.");
+});
+builder.Services.AddScoped<EvolutionApiOptions>(sp =>
+{
+    var ctx = sp.GetRequiredService<WorkspaceContext>();
+    return ctx.Metadata.EvolutionApi ?? throw new InvalidOperationException("EvolutionApi is not configured on workspace metadata.");
+});
+builder.Services.AddScoped<TelegramApiOptions>(sp =>
+{
+    var ctx = sp.GetRequiredService<WorkspaceContext>();
+    return ctx.Metadata.Telegram ?? throw new InvalidOperationException("Telegram is not configured on workspace metadata.");
+});
 builder.Services.AddScoped<EvolutionApiClient>();
-builder.Services.Configure<TelegramApiOptions>(builder.Configuration.GetSection("TelegramApi"));
 builder.Services.AddScoped<TelegramApiClient>();
 
 builder.Services.AddScoped<ChannelMessageTransformFactory>();
@@ -46,7 +61,6 @@ builder.Services.AddTransient<AIAgentExecutor>();
 builder.Services.AddTransient<TextToSpeechExecutor>();
 builder.Services.AddTransient<ReplyMessgeExecutor>();
 
-builder.Services.Configure<AIProviderOptions>(builder.Configuration.GetSection("AIProvider"));
 builder.Services.AddScoped<SpeechToTextService>();
 builder.Services.AddScoped<TextToSpeechService>();
 builder.Services.AddScoped<AIAgentFactory>();
@@ -86,16 +100,29 @@ app.MapPost("/webhook/{channel}/{token}", async (string channel, string token, J
     await messageProcessor.Execute(new(channelType, token, body.ToString()));
 });
 
-app.MapPost("/knowledge/ingestion", async ([FromForm]KnowledgeIngestionDTO dto, KnowledgeBaseIngestor ingestor) =>
+app.MapPost("/knowledge/ingestion", async ([FromForm] KnowledgeIngestionDTO dto, IServiceScopeFactory scopeFactory) =>
 {
     if (dto.File == null)
         return Results.BadRequest(new { Message = "File is required" });
 
+    await using var scope = scopeFactory.CreateAsyncScope();
+    var sp = scope.ServiceProvider;
+
+    var token = dto.Token ?? string.Empty;
+    if (string.IsNullOrEmpty(token))
+        return Results.BadRequest(new { Message = "Token is required" });
+
+    var workspaceLoader = sp.GetRequiredService<WorkspaceLoader>();
+    var workspace = await workspaceLoader.LoadFromIntegrationTokenAsync(token);
+    if (workspace == null)
+        return Results.BadRequest(new { Message = "Token invalid" });
+
+    var ingestor = sp.GetRequiredService<KnowledgeBaseIngestor>();
     await ingestor.ExecuteAsync(new KnowledgeBaseIngestorInput(
         Context: dto.Context ?? Knowledge.DefaultContext,
         ChunkerType: dto.ChunkerType,
         ClearText: dto.ClearText ?? false,
-        Token: dto.Token ?? string.Empty,
+        Token: token,
         Filename: dto.File.FileName,
         File: dto.File.OpenReadStream()
     ));

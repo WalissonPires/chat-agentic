@@ -1,28 +1,21 @@
 using ChatAgentic.Utils;
-using Microsoft.Extensions.Options;
 
 namespace ChatAgentic.Features.Channels.Whatsapp
 {
-    public class EvolutionApiOptions
-    {
-        public string? ServerUrl { get; set; }
-        public string? ApiKey { get; set; }
-        public string? Instance { get; set; }
-    }
 
     public class EvolutionApiClient
     {
         private readonly HttpClient _client;
         private readonly string _instanceName;
 
-        public EvolutionApiClient(IOptions<EvolutionApiOptions> options, IHttpClientFactory httpClientFactory)
+        public EvolutionApiClient(EvolutionApiOptions options, IHttpClientFactory httpClientFactory)
         {
             _client = httpClientFactory.CreateClient();
-            _client.BaseAddress = new Uri(options.Value.ServerUrl ?? throw new Exception("ApiUrl is empty"));
-            _client.DefaultRequestHeaders.Add("apikey", options.Value.ApiKey ?? throw new Exception("ApiKey is empty"));
+            _client.BaseAddress = new Uri(options.ServerUrl ?? throw new Exception("ApiUrl is empty"));
+            _client.DefaultRequestHeaders.Add("apikey", options.ApiKey ?? throw new Exception("ApiKey is empty"));
             _client.Timeout = TimeSpan.FromSeconds(10);
 
-            _instanceName = options.Value.Instance ?? throw new Exception("Instance is empty");
+            _instanceName = options.Instance ?? throw new Exception("Instance is empty");
         }
 
         public async Task<EvolutionMedia> DownloadMediaAsync(string messageKeyId, CancellationToken ct = default)

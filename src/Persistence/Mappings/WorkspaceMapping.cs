@@ -13,7 +13,13 @@ namespace ChatAgentic.Persistence.Mappings
             builder.Property(x => x.Name).HasMaxLength(60).IsRequired(true);
             builder.Property(x => x.WebhookToken).HasMaxLength(32);
             builder.Property(x => x.IntegrationToken).HasMaxLength(32);
-            builder.OwnsOne(x => x.Metadata, x => x.ToJson());
+            builder.OwnsOne(x => x.Metadata, meta =>
+            {
+                meta.ToJson();
+                meta.OwnsOne(m => m.AIProvider);
+                meta.OwnsOne(m => m.EvolutionApi);
+                meta.OwnsOne(m => m.Telegram);
+            });
 
             builder.HasIndex(x => x.WebhookToken);
             builder.HasIndex(x => x.IntegrationToken);

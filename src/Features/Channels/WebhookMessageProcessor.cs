@@ -4,7 +4,6 @@ using ChatAgentic.Features.Channels.Whatsapp;
 using ChatAgentic.Features.Workflows;
 using ChatAgentic.Persistence;
 using ChatAgentic.Queue;
-using Microsoft.EntityFrameworkCore;
 
 namespace ChatAgentic.Features.Channels
 {
@@ -14,13 +13,15 @@ namespace ChatAgentic.Features.Channels
         private readonly AppDbContext _dbContext;
         private readonly ChannelMessageTransformFactory _processorFactory;
         private readonly IMessageQueue<Message> _queue;
+        private readonly WorkspaceLoader _workspaceLoader;
 
-        public WebhookMessageProcessor(ILogger<WhatsappMessageTransform> logger, AppDbContext dbContext, ChannelMessageTransformFactory processorFactory, IMessageQueue<Message> queue)
+        public WebhookMessageProcessor(ILogger<WhatsappMessageTransform> logger, AppDbContext dbContext, ChannelMessageTransformFactory processorFactory, IMessageQueue<Message> queue, WorkspaceLoader workspaceLoader)
         {
             _logger = logger;
             _dbContext = dbContext;
             _processorFactory = processorFactory;
             _queue = queue;
+            _workspaceLoader = workspaceLoader;
         }
 
         public async Task Execute(WebhookMessageProcessorInput input)
@@ -34,8 +35,8 @@ namespace ChatAgentic.Features.Channels
                 return;
             }
 
-            var workspaceId = await _dbContext.Workspaces.Where(x => x.WebhookToken == input.Token).Select(x => x.Id).FirstOrDefaultAsync();
-            if (workspaceId == default)
+            var workspace = await _workspaceLoader.LoadFromWebhookTokenAsync(input.Token);
+            if (workspace == null)
             {
                 _logger.LogError("Webhook token not found");
                 return;
@@ -45,7 +46,7 @@ namespace ChatAgentic.Features.Channels
             var processor = _processorFactory.Create(input.Channel);
 
             _logger.LogDebug("Process message");
-            var result = await processor.Execute(new(workspaceId, input.JsonPayload));
+            var result = await processor.Execute(new(workspace.Id, input.JsonPayload));
 
             if (result.SelfMessage)
             {

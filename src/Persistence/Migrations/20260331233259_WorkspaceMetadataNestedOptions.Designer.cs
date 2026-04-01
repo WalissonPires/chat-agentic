@@ -3,6 +3,7 @@ using System;
 using ChatAgentic.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using Pgvector;
 namespace ChatAgentic.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260331233259_WorkspaceMetadataNestedOptions")]
+    partial class WorkspaceMetadataNestedOptions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,6 +77,7 @@ namespace ChatAgentic.Persistence.Migrations
                         .HasColumnName("channel");
 
                     b.Property<string>("ChatId")
+                        .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)")
                         .HasColumnName("chat_id");
@@ -396,7 +400,7 @@ namespace ChatAgentic.Persistence.Migrations
                                 .HasForeignKey("WorkspaceId")
                                 .HasConstraintName("fk_workspaces_workspaces_id");
 
-                            b1.OwnsOne("ChatAgentic.Features.AI.AIProviderOptions", "AIProvider", b2 =>
+                            b1.OwnsOne("ChatAgentic.Features.AI.AIProviderOptions", "Provider", b2 =>
                                 {
                                     b2.Property<int>("WorkspaceMetadataWorkspaceId");
 
@@ -442,7 +446,7 @@ namespace ChatAgentic.Persistence.Migrations
                                         .HasConstraintName("fk_workspaces_workspaces_workspace_metadata_workspace_id");
                                 });
 
-                            b1.OwnsOne("ChatAgentic.Features.Channels.Whatsapp.EvolutionApiOptions", "EvolutionApi", b2 =>
+                            b1.OwnsOne("ChatAgentic.Features.Channels.Whatsapp.EvolutionApiOptions", "Evolution", b2 =>
                                 {
                                     b2.Property<int>("WorkspaceMetadataWorkspaceId");
 
@@ -462,9 +466,9 @@ namespace ChatAgentic.Persistence.Migrations
                                         .HasConstraintName("fk_workspaces_workspaces_workspace_metadata_workspace_id");
                                 });
 
-                            b1.Navigation("AIProvider");
+                            b1.Navigation("Evolution");
 
-                            b1.Navigation("EvolutionApi");
+                            b1.Navigation("Provider");
 
                             b1.Navigation("Telegram");
                         });

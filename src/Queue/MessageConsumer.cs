@@ -1,5 +1,7 @@
 using ChatAgentic.Features.Channels;
 using ChatAgentic.Features.Workflows;
+using ChatAgentic.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ChatAgentic.Queue
 {
@@ -26,7 +28,16 @@ namespace ChatAgentic.Queue
                 try
                 {
                     await using var scope = _scopeFactory.CreateAsyncScope();
-                    var workflow = scope.ServiceProvider.GetRequiredService<AssistentWorkflow>();
+                    var sp = scope.ServiceProvider;
+                    var workspaceLoader = sp.GetRequiredService<WorkspaceLoader>();
+                    var workspace = await workspaceLoader.LoadFromWorkspaceIdAsync(message.WorkspaceId, stoppingToken);
+                    if (workspace == null)
+                    {
+                        _logger.LogError("Workspace {WorkspaceId} not found for queued message", message.WorkspaceId);
+                        continue;
+                    }
+
+                    var workflow = sp.GetRequiredService<AssistentWorkflow>();
 
                     await workflow.RunAsync(message, stoppingToken);
 

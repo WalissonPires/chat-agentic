@@ -1,5 +1,5 @@
+using ChatAgentic.Features.AI;
 using Microsoft.Agents.AI;
-using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 
@@ -14,11 +14,11 @@ namespace ChatAgentic.Features.AI.Agent
         private readonly AIAgentSkillsFactory _skillsFactory;
         private readonly TextSearchProviderFactory _textSearchProviderFactory;
 
-        public AIAgentFactory(IOptions<AIProviderOptions> aiProviderOptions, ILoggerFactory loggerFactory, AIAgentToolsFactory toolsFactory,
+        public AIAgentFactory(AIProviderOptions aiProviderOptions, ILoggerFactory loggerFactory, AIAgentToolsFactory toolsFactory,
             AIAgentSkillsFactory skillsFactory, TextSearchProviderFactory textSearchProviderFactory)
         {
-            var apiKey = aiProviderOptions.Value.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
-            var model = aiProviderOptions.Value.ChatModel ?? throw new Exception("AIProvider ChatModel not defined.");
+            var apiKey = aiProviderOptions.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
+            var model = aiProviderOptions.ChatModel ?? throw new Exception("AIProvider ChatModel not defined.");
 
             _aiClient = new OpenAIClient(apiKey);
             _chatModel = model;

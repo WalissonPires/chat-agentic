@@ -1,5 +1,4 @@
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Options;
 using OpenAI;
 
 namespace ChatAgentic.Features.AI
@@ -8,10 +7,10 @@ namespace ChatAgentic.Features.AI
     {
         private readonly IEmbeddingGenerator<string, Embedding<float>> _embedGenerator;
 
-        public EmbeddingService(IOptions<AIProviderOptions> options)
+        public EmbeddingService(AIProviderOptions options)
         {
-            var apiKey = options.Value.ApiKey ?? throw new Exception("AIProvider ApiKey is empty");
-            var emdedModel = options.Value.EmbedModel ?? throw new Exception("AIProvider EmbedModel is empty");
+            var apiKey = options.ApiKey ?? throw new Exception("AIProvider ApiKey is empty");
+            var emdedModel = options.EmbedModel ?? throw new Exception("AIProvider EmbedModel is empty");
             _embedGenerator = new OpenAIClient(apiKey).GetEmbeddingClient(emdedModel).AsIEmbeddingGenerator();
         }
 

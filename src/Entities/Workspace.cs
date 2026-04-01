@@ -1,3 +1,7 @@
+using ChatAgentic.Features.AI;
+using ChatAgentic.Features.Channels.Telegram;
+using ChatAgentic.Features.Channels.Whatsapp;
+
 namespace ChatAgentic.Entities
 {
     public class Workspace
@@ -11,14 +15,8 @@ namespace ChatAgentic.Entities
 
     public class WorkspaceMetadata
     {
-        public int SchemaVersion { get; set; }
-        public string? ProviderUrl { get; set; }
-        public string? ProviderApiKey { get; set; }
-        public string? ChatModel { get; set; }
-        public string? EmbedModel { get; set; }
-        public string? TranscriptionModel { get; set; }
-        public string? TtsModel { get; set; }
-        public string? TtsVoice { get; set; }
-        public string[]? Tools { get; set; }
+        public AIProviderOptions? AIProvider { get; set; }
+        public EvolutionApiOptions? EvolutionApi { get; set; }
+        public TelegramApiOptions? Telegram { get; set; }
     }
 }

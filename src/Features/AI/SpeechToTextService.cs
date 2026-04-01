@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Audio;
 
@@ -8,10 +7,10 @@ namespace ChatAgentic.Features.AI
     {
         private readonly AudioClient _audioClient;
 
-        public SpeechToTextService(IOptions<AIProviderOptions> aiProviderOptions)
+        public SpeechToTextService(AIProviderOptions aiProviderOptions)
         {
-            var apiKey = aiProviderOptions.Value.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
-            var model = aiProviderOptions.Value.TranscriptionModel ?? throw new Exception("AIProvider TranscriptionModel not defined.");
+            var apiKey = aiProviderOptions.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
+            var model = aiProviderOptions.TranscriptionModel ?? throw new Exception("AIProvider TranscriptionModel not defined.");
             _audioClient = new OpenAIClient(apiKey).GetAudioClient(model);
         }
 
