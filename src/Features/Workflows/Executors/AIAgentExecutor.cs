@@ -1,9 +1,9 @@
 using ChatAgentic.Features.AI.Agent;
 using ChatAgentic.Features.Channels;
-using ChatAgentic.Features.Workflows;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using ChatAgentic.src.Features.AI;
 
 namespace ChatAgentic.Features.Workflows.Executors
 {
@@ -32,7 +32,13 @@ namespace ChatAgentic.Features.Workflows.Executors
         {
             var aiAgent = await _aiAgentFactory.CreateAsync(weContexto.WorkspaceId);
 
-            ChatMessage[] messages = [ ..weContexto.LastMessages, ..weContexto.InputMessages.Select(x => x.ToChatMessage()) ];
+            ChatMessage[] messages = [ ..weContexto.LastMessages, ..weContexto.InputMessages.Select(x =>
+            {
+                var msg = x.ToChatMessage();
+                foreach(var c in msg.Contents)
+                    (c as UriContent)?.LoadFileToBase64();
+                return msg;
+            }) ];
 
             _logger.LogDebug("Sending {messageCount} messages to AIAgent", messages.Length);
 

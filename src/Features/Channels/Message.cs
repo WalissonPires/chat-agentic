@@ -44,6 +44,8 @@ namespace ChatAgentic.Features.Channels
                 case MessageContentType.Image:
                 case MessageContentType.Video:
                 case MessageContentType.Document:
+                    if (!string.IsNullOrEmpty(message.ContentText))
+                        chatMessage.Contents.Add(new TextContent(message.ContentText));
                     if (!string.IsNullOrEmpty(message.MediaUri))
                         chatMessage.Contents.Add(new UriContent(message.MediaUri, message.MimeType ?? "application/octet-stream"));
                     break;

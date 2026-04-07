@@ -13,7 +13,7 @@ namespace ChatAgentic.Features.Channels.Whatsapp
             _client = httpClientFactory.CreateClient();
             _client.BaseAddress = new Uri(options.ServerUrl ?? throw new Exception("ApiUrl is empty"));
             _client.DefaultRequestHeaders.Add("apikey", options.ApiKey ?? throw new Exception("ApiKey is empty"));
-            _client.Timeout = TimeSpan.FromSeconds(10);
+            _client.Timeout = TimeSpan.FromSeconds(30);
 
             _instanceName = options.Instance ?? throw new Exception("Instance is empty");
         }

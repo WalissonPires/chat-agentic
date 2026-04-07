@@ -75,6 +75,16 @@ namespace ChatAgentic.Entities
                         msg.ContentType = MessageContentType.Text;
                         msg.ContentText = c.Text;
                         break;
+                    case UriContent c:
+                        var mime = c.MediaType.ToLower().Split('/').First();
+                        msg.ContentType =
+                            mime == "audio" ? MessageContentType.Audio :
+                            mime == "image" ? MessageContentType.Image :
+                            mime == "video" ? MessageContentType.Video :
+                            MessageContentType.Document;
+                        msg.MediaUri = c.Uri.ToString();
+                        msg.MimeType = c.MediaType;
+                        break;
                     case FunctionCallContent c:
                         msg.Role = ChatRole.Tool.ToString();
                         msg.ContentType = MessageContentType.Text;
