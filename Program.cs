@@ -64,7 +64,7 @@ builder.Services.AddTransient<ReplyMessgeExecutor>();
 builder.Services.AddScoped<SpeechToTextService>();
 builder.Services.AddScoped<TextToSpeechService>();
 builder.Services.AddScoped<AIAgentFactory>();
-builder.Services.AddScoped<AIAgentToolsFactory>();
+builder.Services.AddSingleton<AIAgentToolsFactory>();
 builder.Services.AddScoped<AIAgentSkillsFactory>();
 builder.Services.AddTransient<MessageMediaStream>();
 builder.Services.AddScoped<EmbeddingService>();
