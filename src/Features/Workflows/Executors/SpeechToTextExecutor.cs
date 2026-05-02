@@ -36,6 +36,7 @@ namespace ChatAgentic.Features.Workflows.Executors
             if (audioMessages.Count == 0)
             {
                 _logger.LogWarning("Audio messages not found");
+                await context.SendMessageAsync(weContext);
                 return;
             }
 

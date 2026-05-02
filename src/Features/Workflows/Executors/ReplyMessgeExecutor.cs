@@ -28,9 +28,8 @@ namespace ChatAgentic.Features.Workflows.Executors
 
         private async ValueTask HandleAsync(WorkflowExecutionContext weContext, IWorkflowContext context, CancellationToken ct)
         {
-            _logger.LogDebug("Send {messageCount} reply messages", weContext.OutputMessages.Count);
-
             var sendMesage = _sendMesageFactory.Create(weContext.Channel);
+            var speakableAlreadySentAsAudio = weContext.OutputAudioMessages.Count > 0;
 
             if (weContext.OutputAudioMessages.Count > 0)
             {
@@ -39,13 +38,18 @@ namespace ChatAgentic.Features.Workflows.Executors
                     await sendMesage.ExecuteAsync(new(weContext.SenderIdentifier, weContext.ChatId, message), ct);
                 }
             }
-            else
+
+            var outboundCount = 0;
+            foreach (var structured in weContext.OutputStructuredResponses)
             {
-                foreach (var message in weContext.OutputMessages)
+                foreach (var message in structured.ToOutboundChatMessages(speakableAlreadySentAsAudio))
                 {
+                    outboundCount++;
                     await sendMesage.ExecuteAsync(new(weContext.SenderIdentifier, weContext.ChatId, message), ct);
                 }
             }
+
+            _logger.LogDebug("Send {audioCount} audio and {textCount} text reply messages", weContext.OutputAudioMessages.Count, outboundCount);
 
             await context.SendMessageAsync(weContext);
 

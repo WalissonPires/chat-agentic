@@ -5,6 +5,7 @@ using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using ChatAgentic.src.Features.AI;
 using System.ClientModel;
+using System.Text.Json;
 
 namespace ChatAgentic.Features.Workflows.Executors
 {
@@ -50,12 +51,14 @@ namespace ChatAgentic.Features.Workflows.Executors
                 AdditionalProperties = new (weContexto.ContactMetadata.Select(x => new KeyValuePair<string, object?>(x.Name, x.Value)))
             };
 
+            if (weContexto.AgentOptions.UseStructuredOutput)
+                runOptions.ResponseFormat = ChatResponseFormat.ForJsonSchema<AgentStructuredResponse>();
+
             try
             {
                 var response = await aiAgent.RunAsync(messages, null, runOptions, ct);
-
-                foreach (var msg in response.Messages)
-                    weContexto.OutputMessages.Add(new ChatMessage(ChatRole.Assistant, msg.Contents));
+                var structuredResponse = ParseStructuredResponse(response);
+                weContexto.OutputStructuredResponses.Add(structuredResponse);
             }
             catch (ClientResultException ex)
             {
@@ -70,11 +73,45 @@ namespace ChatAgentic.Features.Workflows.Executors
                 throw;
             }
 
-            _logger.LogDebug("AIAgent reply {messageCount} messages", weContexto.OutputMessages.Count);
-
-            weContexto.OutputMessages.ForEach(msg => _logger.LogDebug("Assistent message:\r\n{contentText}", msg.Text));
+            _logger.LogDebug("AIAgent reply {messageCount} messages", weContexto.OutputStructuredResponses.Count);
+            foreach (var r in weContexto.OutputStructuredResponses)
+                _logger.LogDebug("Assistant speakable:\r\n{speakable}\r\nAdditional segments: {segments}", r.SpeakableText, string.Join(", ", r.TextSegments));
 
             await context.SendMessageAsync(weContexto, ct);
+        }
+
+        private AgentStructuredResponse ParseStructuredResponse(AgentResponse response)
+        {
+            var payloadCandidates = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(response.Text))
+                payloadCandidates.Add(response.Text);
+
+            var textContents = response.Messages
+                .SelectMany(static message => message.Contents)
+                .OfType<TextContent>()
+                .Select(static content => content.Text)
+                .Where(static text => !string.IsNullOrWhiteSpace(text));
+
+            payloadCandidates.AddRange(textContents!);
+
+            foreach (var candidate in payloadCandidates)
+            {
+                try
+                {
+                    var typedResponse = JsonSerializer.Deserialize<AgentStructuredResponse>(candidate);
+                    if (typedResponse is not null)
+                        return typedResponse.Normalize();
+                }
+                catch (JsonException)
+                {
+                    // fallback below
+                }
+            }
+
+            var plainText = payloadCandidates.FirstOrDefault() ?? string.Empty;
+            _logger.LogWarning("Agent response did not match structured schema. Applying plain-text fallback.");
+            return AgentStructuredResponse.FromPlainText(plainText);
         }
     }
 }

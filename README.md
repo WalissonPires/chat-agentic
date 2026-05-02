@@ -219,6 +219,7 @@ Exemplo de `metadata` (omita blocos de canais que não usar):
 ```json
 {
   "Agent": {
+    "UseStructuredOutput": true,
     "EnableTools": true,
     "Instructions": "Você é um assistente ...",
     "EnableAgentMiddleware": true,
@@ -239,6 +240,27 @@ Exemplo de `metadata` (omita blocos de canais que não usar):
 ```
 
 Para integrar dois números do WhatsApp diferentes no mesmo workspace, crie dois workflows: cada um com seu `webhook_token` próprio e seu bloco `EvolutionApi.Instance` apontando para a instância correspondente.
+
+### Saída estruturada para áudio + texto
+
+Para padronizar todas as respostas do agente em um único contrato (incluindo cenários com TTS), habilite `Agent.UseStructuredOutput = true`.
+
+O runtime configura structured outputs no MAF com schema JSON e espera respostas no formato:
+
+```json
+{
+  "speakableText": "Mensagem completa em linguagem natural, sem URLs.",
+  "textSegments": [
+    "https://exemplo.com/recurso"
+  ]
+}
+```
+
+Regras aplicadas pelo agente:
+- `speakableText` e usado no TTS quando o usuario enviou audio (`ReceiveidAudio` no workflow); nao deve conter URL; toda explicacao narravel fica aqui.
+- `textSegments` contem apenas URLs (uma por item), para envio escrito separado do audio; sem paragrafos complementares.
+- Quando a conversa original for em audio, a resposta pode enviar audio e texto complementar na mesma interacao.
+- Se o provider nao devolver JSON valido, o sistema aplica fallback para texto plano sem interromper o fluxo.
 
 ### Executar a API
 

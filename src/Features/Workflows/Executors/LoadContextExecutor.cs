@@ -99,7 +99,7 @@ namespace ChatAgentic.Features.Workflows.Executors
                 ContactMetadata: contact?.Metadata ?? [],
                 ReceiveidAudio: message.ContentType == MessageContentType.Audio,
                 InputMessages: [ message ],
-                OutputMessages: [],
+                OutputStructuredResponses: [],
                 OutputAudioMessages: [],
                 LastMessages: conversation.Messages.Select(x => x.MapToChatMessage()).Where(x => includeRoles.Contains(x.Role)).Take(20).ToList(),
                 AgentOptions: agentOptions

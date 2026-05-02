@@ -32,7 +32,11 @@ namespace ChatAgentic.Features.Workflows.Executors
         {
             _logger.LogDebug("Save conversation started");
 
-            ChatMessage[] newChatMessages = [ ..weContext.InputMessages.Select(x => x.ToChatMessage()).ToArray(), ..weContext.OutputMessages ];
+            ChatMessage[] newChatMessages =
+            [
+                ..weContext.InputMessages.Select(x => x.ToChatMessage()),
+                ..weContext.OutputStructuredResponses.Select(x => x.ToChatMessage())
+            ];
 
             _logger.LogDebug("{messageCount} new messages to save", newChatMessages.Length);
 

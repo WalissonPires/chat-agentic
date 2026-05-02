@@ -31,28 +31,19 @@ namespace ChatAgentic.Features.Workflows.Executors
         {
             _logger.LogDebug("Synthesizing text into audio");
 
-            foreach (var message in weContext.OutputMessages.ToArray())
+            if (weContext.ReceiveidAudio)
             {
-                var textContents = message.Contents.OfType<TextContent>().ToArray();
-                var audioMessage = new ChatMessage(message.Role, []);
-
-                foreach (var content in textContents)
+                foreach (var structuredResponse in weContext.OutputStructuredResponses)
                 {
-                    var result = await _ttsService.SynthesizeAsync(content.Text, ct);
+                    if (string.IsNullOrWhiteSpace(structuredResponse.SpeakableText))
+                        continue;
 
-                    // var filename = Path.GetTempFileName();
-                    // using var file = File.OpenWrite(filename);
-                    // await result.Audio.ToStream().CopyToAsync(file, ct);
-                    //audioMessage.Contents.Add(new UriContent("file://" + filename, result.MimeType));
-
+                    var result = await _ttsService.SynthesizeAsync(structuredResponse.SpeakableText, ct);
                     var audioBase64 = Convert.ToBase64String(result.Audio);
                     var audioUri = new DataUri(result.MimeType, audioBase64).ToString();
-                    audioMessage.Contents.Add(new UriContent(audioUri, result.MimeType));
-                }
-
-                if (audioMessage.Contents.Count > 0)
+                    var audioMessage = new ChatMessage(ChatRole.Assistant, [new UriContent(audioUri, result.MimeType)]);
                     weContext.OutputAudioMessages.Add(audioMessage);
-
+                }
             }
 
             await context.SendMessageAsync(weContext, ct);
