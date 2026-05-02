@@ -14,8 +14,9 @@ namespace ChatAgentic.Persistence.Mappings
             builder.Property(x => x.ChatId).HasMaxLength(32);
 
             builder.HasOne(x => x.Workspace).WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(x => x.Workflow).WithMany().HasForeignKey(x => x.WorkflowId).OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasIndex(x => new { x.WorkspaceId, x.Channel, x.SenderIdentifier });
+            builder.HasIndex(x => new { x.WorkspaceId, x.WorkflowId, x.Channel, x.SenderIdentifier });
         }
     }
 }

@@ -4,6 +4,7 @@ namespace ChatAgentic.Features.Channels
 {
     public record Message(
         int WorkspaceId,
+        int WorkflowId,
         ChannelType Channel,
         string SenderIdentifier,
         string? ChatId,

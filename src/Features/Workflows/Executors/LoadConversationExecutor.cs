@@ -35,7 +35,7 @@ namespace ChatAgentic.Features.Workflows.Executors
 
             var conversation = await _dbContext.Conversations.AsNoTracking()
                 .Include(x => x.Messages)
-                .Where(x => x.WorkspaceId == message.WorkspaceId && x.Channel == message.Channel && x.SenderIdentifier == message.SenderIdentifier && x.ExpireAt > DateTime.UtcNow)
+                .Where(x => x.WorkspaceId == message.WorkspaceId && x.WorkflowId == message.WorkflowId && x.Channel == message.Channel && x.SenderIdentifier == message.SenderIdentifier && x.ExpireAt > DateTime.UtcNow)
                 .FirstOrDefaultAsync(ct);
 
             if (conversation == null)
@@ -45,6 +45,7 @@ namespace ChatAgentic.Features.Workflows.Executors
                 conversation = new Conversation
                 {
                     WorkspaceId = message.WorkspaceId,
+                    WorkflowId = message.WorkflowId,
                     Channel = message.Channel,
                     SenderIdentifier = message.SenderIdentifier,
                     ChatId = message.ChatId,
@@ -71,10 +72,26 @@ namespace ChatAgentic.Features.Workflows.Executors
                 })
                 .FirstOrDefaultAsync(ct);
 
+            var workflow = await _dbContext.Workflows.AsNoTracking()
+                .Where(w => w.Id == message.WorkflowId)
+                .Select(w => new
+                {
+                    w.Id,
+                    w.Metadata!.Agent
+                })
+                .FirstOrDefaultAsync(ct)
+                ?? throw new InvalidOperationException($"Workflow {message.WorkflowId} not found");
+
+            var agentOptions = workflow.Agent ?? new WorkflowAgentOptions();
+
+            if (string.IsNullOrWhiteSpace(agentOptions.Instructions))
+                throw new InvalidOperationException($"Workflow {message.WorkflowId} does not have agent instructions configured.");
+
             ChatRole[] includeRoles = [ ChatRole.User, ChatRole.Assistant ];
 
             var weContext = new WorkflowExecutionContext(
                 WorkspaceId: message.WorkspaceId,
+                WorkflowId: workflow.Id,
                 ConversationId: conversation.Id,
                 Channel: message.Channel,
                 SenderIdentifier: message.SenderIdentifier,
@@ -84,7 +101,8 @@ namespace ChatAgentic.Features.Workflows.Executors
                 InputMessages: [ message ],
                 OutputMessages: [],
                 OutputAudioMessages: [],
-                LastMessages: conversation.Messages.Select(x => x.MapToChatMessage()).Where(x => includeRoles.Contains(x.Role)).Take(20).ToList()
+                LastMessages: conversation.Messages.Select(x => x.MapToChatMessage()).Where(x => includeRoles.Contains(x.Role)).Take(20).ToList(),
+                AgentOptions: agentOptions
             );
 
             await context.SendMessageAsync(weContext, ct);

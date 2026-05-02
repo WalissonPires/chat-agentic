@@ -1,3 +1,4 @@
+using System.ClientModel;
 using OpenAI;
 using OpenAI.Audio;
 
@@ -11,7 +12,12 @@ namespace ChatAgentic.Features.AI
         {
             var apiKey = aiProviderOptions.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
             var model = aiProviderOptions.TranscriptionModel ?? throw new Exception("AIProvider TranscriptionModel not defined.");
-            _audioClient = new OpenAIClient(apiKey).GetAudioClient(model);
+            var endpoint = aiProviderOptions.Endpoint;
+
+            _audioClient = new OpenAIClient(new ApiKeyCredential(apiKey), new OpenAIClientOptions
+            {
+                Endpoint = string.IsNullOrEmpty(endpoint) ? null : new Uri(endpoint),
+            }).GetAudioClient(model);
         }
 
         public async Task<string> TranscribeAsync(Stream audioStream, string mimeType, CancellationToken ct = default)

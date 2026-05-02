@@ -25,6 +25,8 @@ builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddScoped<WorkspaceLoader>();
+builder.Services.AddScoped<WorkflowContext>();
+builder.Services.AddScoped<WorkflowLoader>();
 builder.Services.AddScoped<AIProviderOptions>(sp =>
 {
     var ctx = sp.GetRequiredService<WorkspaceContext>();
@@ -32,13 +34,13 @@ builder.Services.AddScoped<AIProviderOptions>(sp =>
 });
 builder.Services.AddScoped<EvolutionApiOptions>(sp =>
 {
-    var ctx = sp.GetRequiredService<WorkspaceContext>();
-    return ctx.Metadata.EvolutionApi ?? throw new InvalidOperationException("EvolutionApi is not configured on workspace metadata.");
+    var ctx = sp.GetRequiredService<WorkflowContext>();
+    return ctx.Metadata.EvolutionApi ?? throw new InvalidOperationException("EvolutionApi is not configured on workflow metadata.");
 });
 builder.Services.AddScoped<TelegramApiOptions>(sp =>
 {
-    var ctx = sp.GetRequiredService<WorkspaceContext>();
-    return ctx.Metadata.Telegram ?? throw new InvalidOperationException("Telegram is not configured on workspace metadata.");
+    var ctx = sp.GetRequiredService<WorkflowContext>();
+    return ctx.Metadata.Telegram ?? throw new InvalidOperationException("Telegram is not configured on workflow metadata.");
 });
 builder.Services.AddScoped<EvolutionApiClient>();
 builder.Services.AddScoped<TelegramApiClient>();

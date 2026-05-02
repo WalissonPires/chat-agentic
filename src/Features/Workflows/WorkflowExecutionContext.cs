@@ -6,6 +6,7 @@ namespace ChatAgentic.Features.Workflows
 {
     public record WorkflowExecutionContext(
         int WorkspaceId,
+        int WorkflowId,
         int ConversationId,
         ChannelType Channel,
         string SenderIdentifier,
@@ -15,6 +16,7 @@ namespace ChatAgentic.Features.Workflows
         List<Message> InputMessages,
         List<ChatMessage> OutputMessages,
         List<ChatMessage> LastMessages,
-        List<ChatMessage> OutputAudioMessages
+        List<ChatMessage> OutputAudioMessages,
+        WorkflowAgentOptions AgentOptions
     );
 }

@@ -26,7 +26,10 @@ Essa separação entre recepção HTTP e processamento permite escalar o trabalh
 
 Todo o fluxo respeita o **workspace** como fronteira: pessoas, contatos por canal e fragmentos de conhecimento (com seu **contexto** lógico) pertencem a um único workspace. Webhooks e ingestão de documentos devem ser configurados de forma que mensagens e arquivos caiam no tenant correto, preservando isolamento entre ambientes.
 
-As credenciais e parâmetros do **provedor de IA** (OpenAI ou compatível), da **Evolution API** (WhatsApp) e da **Telegram Bot API** ficam no campo JSON **`metadata`** de cada workspace no banco de dados.
+As credenciais e parâmetros vivem no banco em duas camadas:
+
+- **`workspaces.metadata`** carrega o **provedor de IA** (OpenAI ou compatível) — vale para todos os workflows do tenant (agente, embeddings, STT, TTS, ingestão).
+- **`workflows.metadata`** carrega as configurações de **canal** (Evolution API / Telegram) e do **agente** específico daquele fluxo. Um workspace pode ter vários workflows, cada um com seu `webhook_token` e sua própria instância de canal — assim, dois números de WhatsApp diferentes coexistem no mesmo tenant sem se misturar.
 
 ### Stack
 
@@ -178,24 +181,12 @@ docker compose up -d
 1. Copie o `appsettings.json` com o nome de `appsettings.Development.json`.
 2. Defina `ConnectionString` apontando para o Postgres (host `localhost`, porta alinhada ao Compose, por exemplo `15432`).
 
-### Configuração por workspace (`metadata`)
+### Configuração por workspace (`workspaces.metadata`)
 
-Para cada `workspaces`, preencha a coluna JSON **`metadata`** com os blocos que o tenant usar.
-
-Exemplo ilustrativo (ajuste valores e omita blocos de canais que não usar):
+Mantém apenas as credenciais do provedor de IA, compartilhadas por todos os workflows do tenant.
 
 ```json
 {
-    "EvolutionApi": {
-        "ServerUrl": "https://evoapi-server.com.br",
-        "ApiKey": "TOKEN",
-        "Instance": "INSTANCE_NAME"
-    },
-    "Telegram": {
-        "BotToken": "TOKEN",
-        "BaseUrl": "https://api.telegram.org",
-        "FileBaseUrl": "https://api.telegram.org/file"
-    },
     "AIProvider": {
         "ApiKey": "TOKEN",
         "Endpoint": "https://api.openai.com/v1",
@@ -209,8 +200,45 @@ Exemplo ilustrativo (ajuste valores e omita blocos de canais que não usar):
 }
 ```
 
-- **Webhook**: o workspace precisa de `webhook_token` coerente com a URL `/webhook/{channel}/{token}`.
-- **Ingestão de conhecimento**: use `integration_token` no formulário multipart; o servidor resolve o workspace e aplica o mesmo `metadata` para gerar embeddings.
+### Configuração por workflow (`workflows.metadata`)
+
+Um workspace pode conter vários workflows (1:N). Cada workflow define **o agente** que responde e **a conexão de canal** (Evolution / Telegram) usada para receber e enviar mensagens com aquele `webhook_token`. Os registros são inseridos manualmente no banco.
+
+Schema da tabela `workflows`:
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | `int` | Chave primária |
+| `name` | `varchar(60)` | Nome do workflow |
+| `workspace_id` | `int` | FK para `workspaces.id` (cascade) |
+| `webhook_token` | `varchar(32)` | Token único usado em `/webhook/{channel}/{token}` |
+| `metadata` | `jsonb` | Configuração do agente e do canal (vide abaixo) |
+
+Exemplo de `metadata` (omita blocos de canais que não usar):
+
+```json
+{
+  "Agent": {
+    "EnableTools": true,
+    "Instructions": "Você é um assistente ...",
+    "EnableAgentMiddleware": true,
+    "EnableContextProviders": true,
+    "StrictToolNameValidation": true
+  },
+  "EvolutionApi": {
+    "ServerUrl": "https://evoapi-server.com.br",
+    "ApiKey": "TOKEN",
+    "Instance": "INSTANCE_NAME"
+  },
+  "Telegram": {
+    "BotToken": "TOKEN",
+    "BaseUrl": "https://api.telegram.org",
+    "FileBaseUrl": "https://api.telegram.org/file"
+  }
+}
+```
+
+Para integrar dois números do WhatsApp diferentes no mesmo workspace, crie dois workflows: cada um com seu `webhook_token` próprio e seu bloco `EvolutionApi.Instance` apontando para a instância correspondente.
 
 ### Executar a API
 
@@ -234,7 +262,7 @@ Com o bot criado no Telegram, configure o webhook para a URL da API:
 
 ```bash
 curl -X POST "https://api.telegram.org/bot<SEU_BOT_TOKEN>/setWebhook" \
-  -d "url=https://SEU_DOMINIO/webhook/telegram/<TOKEN_DO_WORKSPACE>"
+  -d "url=https://SEU_DOMINIO/webhook/telegram/<WEBHOOK_TOKEN_DO_WORKFLOW>"
 ```
 
 ---

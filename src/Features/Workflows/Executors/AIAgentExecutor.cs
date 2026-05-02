@@ -4,6 +4,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using ChatAgentic.src.Features.AI;
+using System.ClientModel;
 
 namespace ChatAgentic.Features.Workflows.Executors
 {
@@ -30,7 +31,7 @@ namespace ChatAgentic.Features.Workflows.Executors
 
         private async ValueTask HandleAsync(WorkflowExecutionContext weContexto, IWorkflowContext context, CancellationToken ct)
         {
-            var aiAgent = await _aiAgentFactory.CreateAsync(weContexto.WorkspaceId);
+            var aiAgent = await _aiAgentFactory.CreateAsync(weContexto.WorkspaceId, weContexto.AgentOptions);
 
             ChatMessage[] messages = [ ..weContexto.LastMessages, ..weContexto.InputMessages.Select(x =>
             {
@@ -49,10 +50,25 @@ namespace ChatAgentic.Features.Workflows.Executors
                 AdditionalProperties = new (weContexto.ContactMetadata.Select(x => new KeyValuePair<string, object?>(x.Name, x.Value)))
             };
 
-            var response = await aiAgent.RunAsync(messages, null, runOptions, ct);
+            try
+            {
+                var response = await aiAgent.RunAsync(messages, null, runOptions, ct);
 
-            foreach (var msg in response.Messages)
-                weContexto.OutputMessages.Add(new ChatMessage(ChatRole.Assistant, msg.Contents));
+                foreach (var msg in response.Messages)
+                    weContexto.OutputMessages.Add(new ChatMessage(ChatRole.Assistant, msg.Contents));
+            }
+            catch (ClientResultException ex)
+            {
+                var errorMetadata = ex.Data.Count == 0
+                    ? string.Empty
+                    : string.Join("; ", ex.Data.Cast<System.Collections.DictionaryEntry>().Select(x => $"{x.Key}={x.Value}"));
+
+                _logger.LogError(ex, "AI provider request failed. Status={status}. Message={message}. Metadata={metadata}",
+                    ex.Status,
+                    ex.Message,
+                    errorMetadata);
+                throw;
+            }
 
             _logger.LogDebug("AIAgent reply {messageCount} messages", weContexto.OutputMessages.Count);
 

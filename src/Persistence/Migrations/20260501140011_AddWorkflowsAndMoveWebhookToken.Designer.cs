@@ -3,6 +3,7 @@ using System;
 using ChatAgentic.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using Pgvector;
 namespace ChatAgentic.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260501140011_AddWorkflowsAndMoveWebhookToken")]
+    partial class AddWorkflowsAndMoveWebhookToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -92,10 +95,6 @@ namespace ChatAgentic.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("sender_identifier");
 
-                    b.Property<int>("WorkflowId")
-                        .HasColumnType("integer")
-                        .HasColumnName("workflow_id");
-
                     b.Property<int>("WorkspaceId")
                         .HasColumnType("integer")
                         .HasColumnName("workspace_id");
@@ -103,11 +102,8 @@ namespace ChatAgentic.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_conversations");
 
-                    b.HasIndex("WorkflowId")
-                        .HasDatabaseName("ix_conversations_workflow_id");
-
-                    b.HasIndex("WorkspaceId", "WorkflowId", "Channel", "SenderIdentifier")
-                        .HasDatabaseName("ix_conversations_workspace_id_workflow_id_channel_sender_ident");
+                    b.HasIndex("WorkspaceId", "Channel", "SenderIdentifier")
+                        .HasDatabaseName("ix_conversations_workspace_id_channel_sender_identifier");
 
                     b.ToTable("conversations", (string)null);
                 });
@@ -341,21 +337,12 @@ namespace ChatAgentic.Persistence.Migrations
 
             modelBuilder.Entity("ChatAgentic.Entities.Conversation", b =>
                 {
-                    b.HasOne("ChatAgentic.Entities.Workflow", "Workflow")
-                        .WithMany()
-                        .HasForeignKey("WorkflowId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_conversations_workflows_workflow_id");
-
                     b.HasOne("ChatAgentic.Entities.Workspace", "Workspace")
                         .WithMany()
                         .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_conversations_workspaces_workspace_id");
-
-                    b.Navigation("Workflow");
 
                     b.Navigation("Workspace");
                 });
@@ -453,55 +440,7 @@ namespace ChatAgentic.Persistence.Migrations
                                 {
                                     b2.Property<int>("WorkflowMetadataWorkflowId");
 
-                                    b2.Property<bool>("EnableAgentMiddleware");
-
-                                    b2.Property<bool>("EnableContextProviders");
-
-                                    b2.Property<bool>("EnableTools");
-
                                     b2.Property<string>("Instructions");
-
-                                    b2.Property<bool>("StrictToolNameValidation");
-
-                                    b2.HasKey("WorkflowMetadataWorkflowId")
-                                        .HasName("pk_workflows");
-
-                                    b2.ToTable("workflows");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("WorkflowMetadataWorkflowId")
-                                        .HasConstraintName("fk_workflows_workflows_workflow_metadata_workflow_id");
-                                });
-
-                            b1.OwnsOne("ChatAgentic.Features.Channels.Telegram.TelegramApiOptions", "Telegram", b2 =>
-                                {
-                                    b2.Property<int>("WorkflowMetadataWorkflowId");
-
-                                    b2.Property<string>("BaseUrl");
-
-                                    b2.Property<string>("BotToken");
-
-                                    b2.Property<string>("FileBaseUrl");
-
-                                    b2.HasKey("WorkflowMetadataWorkflowId")
-                                        .HasName("pk_workflows");
-
-                                    b2.ToTable("workflows");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("WorkflowMetadataWorkflowId")
-                                        .HasConstraintName("fk_workflows_workflows_workflow_metadata_workflow_id");
-                                });
-
-                            b1.OwnsOne("ChatAgentic.Features.Channels.Whatsapp.EvolutionApiOptions", "EvolutionApi", b2 =>
-                                {
-                                    b2.Property<int>("WorkflowMetadataWorkflowId");
-
-                                    b2.Property<string>("ApiKey");
-
-                                    b2.Property<string>("Instance");
-
-                                    b2.Property<string>("ServerUrl");
 
                                     b2.HasKey("WorkflowMetadataWorkflowId")
                                         .HasName("pk_workflows");
@@ -514,10 +453,6 @@ namespace ChatAgentic.Persistence.Migrations
                                 });
 
                             b1.Navigation("Agent");
-
-                            b1.Navigation("EvolutionApi");
-
-                            b1.Navigation("Telegram");
                         });
 
                     b.Navigation("Metadata");
@@ -553,8 +488,6 @@ namespace ChatAgentic.Persistence.Migrations
 
                                     b2.Property<string>("EmbedModel");
 
-                                    b2.Property<string>("Endpoint");
-
                                     b2.Property<string>("TranscriptionModel");
 
                                     b2.Property<string>("TtsModel");
@@ -571,7 +504,51 @@ namespace ChatAgentic.Persistence.Migrations
                                         .HasConstraintName("fk_workspaces_workspaces_workspace_metadata_workspace_id");
                                 });
 
+                            b1.OwnsOne("ChatAgentic.Features.Channels.Telegram.TelegramApiOptions", "Telegram", b2 =>
+                                {
+                                    b2.Property<int>("WorkspaceMetadataWorkspaceId");
+
+                                    b2.Property<string>("BaseUrl");
+
+                                    b2.Property<string>("BotToken");
+
+                                    b2.Property<string>("FileBaseUrl");
+
+                                    b2.HasKey("WorkspaceMetadataWorkspaceId")
+                                        .HasName("pk_workspaces");
+
+                                    b2.ToTable("workspaces");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("WorkspaceMetadataWorkspaceId")
+                                        .HasConstraintName("fk_workspaces_workspaces_workspace_metadata_workspace_id");
+                                });
+
+                            b1.OwnsOne("ChatAgentic.Features.Channels.Whatsapp.EvolutionApiOptions", "EvolutionApi", b2 =>
+                                {
+                                    b2.Property<int>("WorkspaceMetadataWorkspaceId");
+
+                                    b2.Property<string>("ApiKey");
+
+                                    b2.Property<string>("Instance");
+
+                                    b2.Property<string>("ServerUrl");
+
+                                    b2.HasKey("WorkspaceMetadataWorkspaceId")
+                                        .HasName("pk_workspaces");
+
+                                    b2.ToTable("workspaces");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("WorkspaceMetadataWorkspaceId")
+                                        .HasConstraintName("fk_workspaces_workspaces_workspace_metadata_workspace_id");
+                                });
+
                             b1.Navigation("AIProvider");
+
+                            b1.Navigation("EvolutionApi");
+
+                            b1.Navigation("Telegram");
                         });
 
                     b.Navigation("Metadata");

@@ -23,14 +23,6 @@ public sealed class WorkspaceLoader
         return workspace;
     }
 
-    public async Task<Workspace?> LoadFromWebhookTokenAsync(string token, CancellationToken ct = default)
-    {
-        var workspace = await _db.Workspaces.AsNoTracking().FirstOrDefaultAsync(w => w.WebhookToken == token, ct);
-        if (workspace != null)
-            _workspaceContext.SetMetadata(workspace);
-        return workspace;
-    }
-
     public async Task<Workspace?> LoadFromIntegrationTokenAsync(string token, CancellationToken ct = default)
     {
         var workspace = await _db.Workspaces.AsNoTracking().FirstOrDefaultAsync(w => w.IntegrationToken == token, ct);

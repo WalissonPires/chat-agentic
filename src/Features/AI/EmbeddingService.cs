@@ -1,3 +1,4 @@
+using System.ClientModel;
 using Microsoft.Extensions.AI;
 using OpenAI;
 
@@ -11,7 +12,12 @@ namespace ChatAgentic.Features.AI
         {
             var apiKey = options.ApiKey ?? throw new Exception("AIProvider ApiKey is empty");
             var emdedModel = options.EmbedModel ?? throw new Exception("AIProvider EmbedModel is empty");
-            _embedGenerator = new OpenAIClient(apiKey).GetEmbeddingClient(emdedModel).AsIEmbeddingGenerator();
+            var endpoint = options.Endpoint;
+
+            _embedGenerator = new OpenAIClient(new ApiKeyCredential(apiKey), new OpenAIClientOptions
+            {
+                Endpoint = string.IsNullOrEmpty(endpoint) ? null : new Uri(endpoint),
+            }).GetEmbeddingClient(emdedModel).AsIEmbeddingGenerator();
         }
 
         public async Task<ReadOnlyMemory<float>> EmbedAsync(string text)

@@ -5,12 +5,13 @@ namespace ChatAgentic.Persistence
 {
     public class AppDbContext(DbContextOptions options) : DbContext(options)
     {
-        public DbSet<Workspace> Workspaces { get; set; }
-        public DbSet<Person> People { get; set; }
-        public DbSet<Contact> Contacts { get; set; }
-        public DbSet<Conversation> Conversations { get; set; }
-        public DbSet<ConversationMessage> ConversationMessages { get; set; }
-        public DbSet<Knowledge> Knowledges { get; set; }
+        public DbSet<Workspace> Workspaces { get; set; } = default!;
+        public DbSet<Workflow> Workflows { get; set; } = default!;
+        public DbSet<Person> People { get; set; } = default!;
+        public DbSet<Contact> Contacts { get; set; } = default!;
+        public DbSet<Conversation> Conversations { get; set; } = default!;
+        public DbSet<ConversationMessage> ConversationMessages { get; set; } = default!;
+        public DbSet<Knowledge> Knowledges { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

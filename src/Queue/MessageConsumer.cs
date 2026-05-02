@@ -37,6 +37,14 @@ namespace ChatAgentic.Queue
                         continue;
                     }
 
+                    var workflowLoader = sp.GetRequiredService<WorkflowLoader>();
+                    var workflowEntity = await workflowLoader.LoadFromWorkflowIdAsync(message.WorkflowId, stoppingToken);
+                    if (workflowEntity == null)
+                    {
+                        _logger.LogError("Workflow {WorkflowId} not found for queued message", message.WorkflowId);
+                        continue;
+                    }
+
                     var workflow = sp.GetRequiredService<AssistentWorkflow>();
 
                     await workflow.RunAsync(message, stoppingToken);

@@ -7,6 +7,7 @@ namespace ChatAgentic.Features.Channels
 
     public record ChannelMessageTransformInput(
         int WorkspaceId,
+        int WorkflowId,
         string JsonPayload
     );
 

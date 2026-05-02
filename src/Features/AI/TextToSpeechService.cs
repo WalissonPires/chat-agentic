@@ -1,3 +1,4 @@
+using System.ClientModel;
 using OpenAI;
 using OpenAI.Audio;
 
@@ -13,8 +14,12 @@ public sealed class TextToSpeechService
         var apiKey = aiProviderOptions.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
         var model = aiProviderOptions.TtsModel ?? throw new Exception("AIProvider TtsModel not defined.");
         var voice = aiProviderOptions.TtsVoice ?? throw new Exception("AIProvider TtsVoice not defined.");
+        var endpoint = aiProviderOptions.Endpoint;
 
-        _audioClient = new OpenAIClient(apiKey).GetAudioClient(model);
+        _audioClient = new OpenAIClient(new ApiKeyCredential(apiKey), new OpenAIClientOptions
+        {
+            Endpoint = string.IsNullOrEmpty(endpoint) ? null : new Uri(endpoint),
+        }).GetAudioClient(model);
 
         _voice = voice.ToLowerInvariant() switch
         {

@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using ChatAgentic.Features.Channels.Whatsapp;
-using ChatAgentic.Features.Workflows;
 using ChatAgentic.Persistence;
 using ChatAgentic.Queue;
 
@@ -10,17 +9,17 @@ namespace ChatAgentic.Features.Channels
     public partial class WebhookMessageProcessor
     {
         private readonly ILogger _logger;
-        private readonly AppDbContext _dbContext;
         private readonly ChannelMessageTransformFactory _processorFactory;
         private readonly IMessageQueue<Message> _queue;
+        private readonly WorkflowLoader _workflowLoader;
         private readonly WorkspaceLoader _workspaceLoader;
 
-        public WebhookMessageProcessor(ILogger<WhatsappMessageTransform> logger, AppDbContext dbContext, ChannelMessageTransformFactory processorFactory, IMessageQueue<Message> queue, WorkspaceLoader workspaceLoader)
+        public WebhookMessageProcessor(ILogger<WhatsappMessageTransform> logger, ChannelMessageTransformFactory processorFactory, IMessageQueue<Message> queue, WorkflowLoader workflowLoader, WorkspaceLoader workspaceLoader)
         {
             _logger = logger;
-            _dbContext = dbContext;
             _processorFactory = processorFactory;
             _queue = queue;
+            _workflowLoader = workflowLoader;
             _workspaceLoader = workspaceLoader;
         }
 
@@ -35,18 +34,20 @@ namespace ChatAgentic.Features.Channels
                 return;
             }
 
-            var workspace = await _workspaceLoader.LoadFromWebhookTokenAsync(input.Token);
-            if (workspace == null)
+            var workflow = await _workflowLoader.LoadFromWebhookTokenAsync(input.Token);
+            if (workflow == null)
             {
                 _logger.LogError("Webhook token not found");
                 return;
             }
 
+            await _workspaceLoader.LoadFromWorkspaceIdAsync(workflow.WorkspaceId);
+
             _logger.LogDebug("Create channel message processor");
             var processor = _processorFactory.Create(input.Channel);
 
             _logger.LogDebug("Process message");
-            var result = await processor.Execute(new(workspace.Id, input.JsonPayload));
+            var result = await processor.Execute(new(workflow.WorkspaceId, workflow.Id, input.JsonPayload));
 
             if (result.SelfMessage)
             {
