@@ -6,7 +6,7 @@ namespace ChatAgentic.Persistence
     public class AppDbContext(DbContextOptions options) : DbContext(options)
     {
         public DbSet<Workspace> Workspaces { get; set; } = default!;
-        public DbSet<Workflow> Workflows { get; set; } = default!;
+        public DbSet<AgentDefinition> Agents { get; set; } = default!;
         public DbSet<Person> People { get; set; } = default!;
         public DbSet<Contact> Contacts { get; set; } = default!;
         public DbSet<Conversation> Conversations { get; set; } = default!;

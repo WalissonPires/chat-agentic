@@ -5,6 +5,7 @@
 - [ ] Implementar RateLimit de mensagem por usuário/canal
 - [ ] Implementar Adversarial Detection (LLM Guardrails)
 - [ ] Implementar System Prompt Separation (Instruction Tuning) (Delimitar mensagem do usuário)
+- [ ] Configurar no AgentOptions quais grupos de tools e mcp utilizar (Tools: [ "internal.date" ], Mcps: [ "midesp" ])
   ### UserMessage
   ...
   ### SystemMessage

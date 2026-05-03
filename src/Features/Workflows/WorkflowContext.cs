@@ -4,17 +4,17 @@ namespace ChatAgentic.Features.Workflows;
 
 public sealed class WorkflowContext
 {
-    private WorkflowMetadata? _metadata;
+    private AgentDefinitionMetadata? _metadata;
 
-    public WorkflowMetadata Metadata => _metadata ?? throw new InvalidOperationException("WorkflowContext is not initialized. Call SetFromWorkflow before resolving workflow-scoped services.");
+    public AgentDefinitionMetadata Metadata => _metadata ?? throw new InvalidOperationException("WorkflowContext is not initialized. Call SetFromAgentDefinition before resolving workflow-scoped services.");
 
-    public int WorkflowId { get; private set; }
+    public int AgentDefinitionId { get; private set; }
     public int WorkspaceId { get; private set; }
 
-    public void SetFromWorkflow(Workflow workflow)
+    public void SetFromAgentDefinition(AgentDefinition agentDefinition)
     {
-        _metadata = workflow.Metadata;
-        WorkflowId = workflow.Id;
-        WorkspaceId = workflow.WorkspaceId;
+        _metadata = agentDefinition.Metadata;
+        AgentDefinitionId = agentDefinition.Id;
+        WorkspaceId = agentDefinition.WorkspaceId;
     }
 }

@@ -37,11 +37,11 @@ namespace ChatAgentic.Queue
                         continue;
                     }
 
-                    var workflowLoader = sp.GetRequiredService<WorkflowLoader>();
-                    var workflowEntity = await workflowLoader.LoadFromWorkflowIdAsync(message.WorkflowId, stoppingToken);
-                    if (workflowEntity == null)
+                    var agentDefinitionLoader = sp.GetRequiredService<AgentDefinitionLoader>();
+                    var agentDefinition = await agentDefinitionLoader.LoadFromAgentDefinitionIdAsync(message.AgentDefinitionId, stoppingToken);
+                    if (agentDefinition == null)
                     {
-                        _logger.LogError("Workflow {WorkflowId} not found for queued message", message.WorkflowId);
+                        _logger.LogError("AgentDefinition {AgentDefinitionId} not found for queued message", message.AgentDefinitionId);
                         continue;
                     }
 

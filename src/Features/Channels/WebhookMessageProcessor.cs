@@ -11,15 +11,15 @@ namespace ChatAgentic.Features.Channels
         private readonly ILogger _logger;
         private readonly ChannelMessageTransformFactory _processorFactory;
         private readonly IMessageQueue<Message> _queue;
-        private readonly WorkflowLoader _workflowLoader;
+        private readonly AgentDefinitionLoader _agentDefinitionLoader;
         private readonly WorkspaceLoader _workspaceLoader;
 
-        public WebhookMessageProcessor(ILogger<WhatsappMessageTransform> logger, ChannelMessageTransformFactory processorFactory, IMessageQueue<Message> queue, WorkflowLoader workflowLoader, WorkspaceLoader workspaceLoader)
+        public WebhookMessageProcessor(ILogger<WhatsappMessageTransform> logger, ChannelMessageTransformFactory processorFactory, IMessageQueue<Message> queue, AgentDefinitionLoader agentDefinitionLoader, WorkspaceLoader workspaceLoader)
         {
             _logger = logger;
             _processorFactory = processorFactory;
             _queue = queue;
-            _workflowLoader = workflowLoader;
+            _agentDefinitionLoader = agentDefinitionLoader;
             _workspaceLoader = workspaceLoader;
         }
 
@@ -34,20 +34,20 @@ namespace ChatAgentic.Features.Channels
                 return;
             }
 
-            var workflow = await _workflowLoader.LoadFromWebhookTokenAsync(input.Token);
-            if (workflow == null)
+            var agentDefinition = await _agentDefinitionLoader.LoadFromWebhookTokenAsync(input.Token);
+            if (agentDefinition == null)
             {
                 _logger.LogError("Webhook token not found");
                 return;
             }
 
-            await _workspaceLoader.LoadFromWorkspaceIdAsync(workflow.WorkspaceId);
+            await _workspaceLoader.LoadFromWorkspaceIdAsync(agentDefinition.WorkspaceId);
 
             _logger.LogDebug("Create channel message processor");
             var processor = _processorFactory.Create(input.Channel);
 
             _logger.LogDebug("Process message");
-            var result = await processor.Execute(new(workflow.WorkspaceId, workflow.Id, input.JsonPayload));
+            var result = await processor.Execute(new(agentDefinition.WorkspaceId, agentDefinition.Id, input.JsonPayload));
 
             if (result.SelfMessage)
             {

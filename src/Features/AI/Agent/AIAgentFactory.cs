@@ -1,5 +1,4 @@
 using System.ClientModel;
-using ChatAgentic.Entities;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using OpenAI;
@@ -36,18 +35,18 @@ namespace ChatAgentic.Features.AI.Agent
             _textSearchProviderFactory = textSearchProviderFactory;
         }
 
-        public async Task<AIAgent> CreateAsync(int workspaceId, WorkflowAgentOptions workflowAgentOptions)
+        public async Task<AIAgent> CreateAsync(int workspaceId, AgentOptions options)
         {
-            var instructions = BuildAgentInstructions(workflowAgentOptions);
+            var instructions = BuildAgentInstructions(options);
             if (string.IsNullOrWhiteSpace(instructions))
-                throw new InvalidOperationException("Workflow agent instructions are not configured.");
+                throw new InvalidOperationException("Agent definition instructions are not configured.");
 
             var logger = _loggerFactory.CreateLogger<AIAgentFactory>();
 
             logger.LogDebug("Creating AI Agent");
 
-            var tools = await CreateToolsAsync(workflowAgentOptions, logger);
-            var contextProviders = CreateContextProviders(workflowAgentOptions, workspaceId, logger);
+            var tools = await CreateToolsAsync(options, logger);
+            var contextProviders = CreateContextProviders(options, workspaceId, logger);
 
             var chatOptions = new ChatOptions
             {
@@ -72,7 +71,7 @@ namespace ChatAgentic.Features.AI.Agent
                 .AsAIAgent(chatAgentOptions, loggerFactory: _loggerFactory)
                 .AsBuilder();
 
-            if (workflowAgentOptions.EnableAgentMiddleware)
+            if (options.EnableAgentMiddleware)
                 builder.Use(AIAgentMiddleware.InjectToolArguments);
 
             var aiAgent = builder.Build();
@@ -82,13 +81,13 @@ namespace ChatAgentic.Features.AI.Agent
             return aiAgent;
         }
 
-        private static string BuildAgentInstructions(WorkflowAgentOptions workflowAgentOptions)
+        private static string BuildAgentInstructions(AgentOptions options)
         {
-            var instructions = workflowAgentOptions.Instructions?.Trim();
+            var instructions = options.Instructions?.Trim();
             if (string.IsNullOrWhiteSpace(instructions))
                 return string.Empty;
 
-            if (!workflowAgentOptions.UseStructuredOutput)
+            if (!options.UseStructuredOutput)
                 return instructions;
 
             return $"{instructions}\n\n{StructuredOutputInstructions}";
@@ -112,11 +111,11 @@ Exemplo CERTO quando NAO ha URL:
 O audio de resposta e decidido pela aplicacao quando o usuario enviou mensagem em audio; nao inclua campos extras para isso.
 """;
 
-        private async Task<List<AITool>> CreateToolsAsync(WorkflowAgentOptions agentOptions, ILogger logger)
+        private async Task<List<AITool>> CreateToolsAsync(AgentOptions agentOptions, ILogger logger)
         {
             if (!agentOptions.EnableTools)
             {
-                logger.LogInformation("Tools are disabled by WorkflowAgentOptions.EnableTools");
+                logger.LogInformation("Tools are disabled by AgentDefinitionAgentOptions.EnableTools");
                 return [];
             }
 
@@ -130,11 +129,11 @@ O audio de resposta e decidido pela aplicacao quando o usuario enviou mensagem e
             return normalizedTools;
         }
 
-        private List<AIContextProvider> CreateContextProviders(WorkflowAgentOptions agentOptions, int workspaceId, ILogger logger)
+        private List<AIContextProvider> CreateContextProviders(AgentOptions agentOptions, int workspaceId, ILogger logger)
         {
             if (!agentOptions.EnableContextProviders)
             {
-                logger.LogInformation("Context providers are disabled by WorkflowAgentOptions.EnableContextProviders");
+                logger.LogInformation("Context providers are disabled by AgentDefinitionAgentOptions.EnableContextProviders");
                 return [];
             }
 
@@ -160,7 +159,7 @@ O audio de resposta e decidido pela aplicacao quando o usuario enviou mensagem e
             return providers;
         }
 
-        private List<AITool> NormalizeAndDeduplicateTools(WorkflowAgentOptions agentOptions, IEnumerable<AITool> tools, ILogger logger)
+        private List<AITool> NormalizeAndDeduplicateTools(AgentOptions agentOptions, IEnumerable<AITool> tools, ILogger logger)
         {
             var output = new List<AITool>();
             var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

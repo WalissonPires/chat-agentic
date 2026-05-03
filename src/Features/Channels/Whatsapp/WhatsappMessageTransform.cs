@@ -69,7 +69,7 @@ namespace ChatAgentic.Features.Channels.Whatsapp
 
             var message = new Message(
                 WorkspaceId: input.WorkspaceId,
-                WorkflowId: input.WorkflowId,
+                AgentDefinitionId: input.AgentDefinitionId,
                 Channel: ChannelType.Whatsapp,
                 SenderIdentifier: phone,
                 ChatId: null,

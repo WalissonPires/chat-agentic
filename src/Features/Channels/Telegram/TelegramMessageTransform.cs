@@ -85,7 +85,7 @@ namespace ChatAgentic.Features.Channels.Telegram
 
             var message = new Message(
                 WorkspaceId: input.WorkspaceId,
-                WorkflowId: input.WorkflowId,
+                AgentDefinitionId: input.AgentDefinitionId,
                 Channel: ChannelType.Telegram,
                 SenderIdentifier: username,
                 ChatId: chatId,

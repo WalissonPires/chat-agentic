@@ -14,8 +14,8 @@ namespace ChatAgentic.Entities
         public int WorkspaceId { get; set; }
         public Workspace Workspace { get; set; } = default!;
 
-        public int WorkflowId { get; set; }
-        public Workflow Workflow { get; set; } = default!;
+        public int AgentId { get; set; }
+        public AgentDefinition Agent { get; set; } = default!;
 
         public List<ConversationMessage> Messages { get; set; } = default!;
     }

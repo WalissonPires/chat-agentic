@@ -5,6 +5,7 @@ using ChatAgentic.Entities;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
+using ChatAgentic.Features.AI.Agent;
 
 namespace ChatAgentic.Features.Workflows.Executors
 {
@@ -35,7 +36,7 @@ namespace ChatAgentic.Features.Workflows.Executors
 
             var conversation = await _dbContext.Conversations.AsNoTracking()
                 .Include(x => x.Messages)
-                .Where(x => x.WorkspaceId == message.WorkspaceId && x.WorkflowId == message.WorkflowId && x.Channel == message.Channel && x.SenderIdentifier == message.SenderIdentifier && x.ExpireAt > DateTime.UtcNow)
+                .Where(x => x.WorkspaceId == message.WorkspaceId && x.AgentId == message.AgentDefinitionId && x.Channel == message.Channel && x.SenderIdentifier == message.SenderIdentifier && x.ExpireAt > DateTime.UtcNow)
                 .FirstOrDefaultAsync(ct);
 
             if (conversation == null)
@@ -45,7 +46,7 @@ namespace ChatAgentic.Features.Workflows.Executors
                 conversation = new Conversation
                 {
                     WorkspaceId = message.WorkspaceId,
-                    WorkflowId = message.WorkflowId,
+                    AgentId = message.AgentDefinitionId,
                     Channel = message.Channel,
                     SenderIdentifier = message.SenderIdentifier,
                     ChatId = message.ChatId,
@@ -72,26 +73,26 @@ namespace ChatAgentic.Features.Workflows.Executors
                 })
                 .FirstOrDefaultAsync(ct);
 
-            var workflow = await _dbContext.Workflows.AsNoTracking()
-                .Where(w => w.Id == message.WorkflowId)
+            var agentDefinition = await _dbContext.Agents.AsNoTracking()
+                .Where(w => w.Id == message.AgentDefinitionId)
                 .Select(w => new
                 {
                     w.Id,
                     w.Metadata!.Agent
                 })
                 .FirstOrDefaultAsync(ct)
-                ?? throw new InvalidOperationException($"Workflow {message.WorkflowId} not found");
+                ?? throw new InvalidOperationException($"Agent definition {message.AgentDefinitionId} not found");
 
-            var agentOptions = workflow.Agent ?? new WorkflowAgentOptions();
+            var agentOptions = agentDefinition.Agent ?? new AgentOptions();
 
             if (string.IsNullOrWhiteSpace(agentOptions.Instructions))
-                throw new InvalidOperationException($"Workflow {message.WorkflowId} does not have agent instructions configured.");
+                throw new InvalidOperationException($"Agent definition {message.AgentDefinitionId} does not have agent instructions configured.");
 
             ChatRole[] includeRoles = [ ChatRole.User, ChatRole.Assistant ];
 
             var weContext = new WorkflowExecutionContext(
                 WorkspaceId: message.WorkspaceId,
-                WorkflowId: workflow.Id,
+                AgentDefinitionId: agentDefinition.Id,
                 ConversationId: conversation.Id,
                 Channel: message.Channel,
                 SenderIdentifier: message.SenderIdentifier,

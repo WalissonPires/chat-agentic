@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ChatAgentic.Persistence.Mappings
 {
-    public class WorkflowMapping : IEntityTypeConfiguration<Workflow>
+    public class AgentDefinitionMapping : IEntityTypeConfiguration<AgentDefinition>
     {
-        public void Configure(EntityTypeBuilder<Workflow> builder)
+        public void Configure(EntityTypeBuilder<AgentDefinition> builder)
         {
             builder.HasKey(x => x.Id);
 
