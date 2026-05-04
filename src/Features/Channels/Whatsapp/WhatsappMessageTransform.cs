@@ -50,6 +50,10 @@ namespace ChatAgentic.Features.Channels.Whatsapp
 
             string? fileName = data.Message?.DocumentMessage?.FileName;
             string? mimeType = data.Message?.DocumentMessage?.Mimetype;
+            if (contentType == MessageContentType.Audio)
+                mimeType = data.Message?.AudioMessage?.Mimetype ?? mimeType;
+            else if (contentType == MessageContentType.Image)
+                mimeType = data.Message?.ImageMessage?.Mimetype ?? mimeType;
 
             // image/png is sended as document
             if (mimeType?.StartsWith("image") == true)

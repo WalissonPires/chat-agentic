@@ -1,49 +1,27 @@
-using System.ClientModel;
-using OpenAI;
-using OpenAI.Audio;
+using ChatAgentic.Features.AI.Audio;
 
 namespace ChatAgentic.Features.AI
 {
     public class SpeechToTextService
     {
-        private readonly AudioClient _audioClient;
+        private readonly IAudioClient _audioClient;
+        private readonly ILogger<SpeechToTextService> _logger;
 
-        public SpeechToTextService(AIProviderOptions aiProviderOptions)
+        public SpeechToTextService(AIProviderOptions aiProviderOptions, IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
         {
-            var apiKey = aiProviderOptions.ApiKey ?? throw new Exception("AIProvider APIKey not defined.");
-            var model = aiProviderOptions.TranscriptionModel ?? throw new Exception("AIProvider TranscriptionModel not defined.");
-            var endpoint = aiProviderOptions.Endpoint;
+            _logger = loggerFactory.CreateLogger<SpeechToTextService>();
 
-            _audioClient = new OpenAIClient(new ApiKeyCredential(apiKey), new OpenAIClientOptions
-            {
-                Endpoint = string.IsNullOrEmpty(endpoint) ? null : new Uri(endpoint),
-            }).GetAudioClient(model);
+            _audioClient = AudioClientOpenRouter.IsOpenRouterEndpoint(aiProviderOptions.Endpoint)
+                ? new AudioClientOpenRouter(aiProviderOptions, httpClientFactory)
+                : new OpenAIAudioClient(aiProviderOptions);
+
+            _logger.LogDebug("SpeechToTextService using client: {Client}, model: {Model}", _audioClient.GetType().Name, aiProviderOptions.TranscriptionModel);
         }
 
-        public async Task<string> TranscribeAsync(Stream audioStream, string mimeType, CancellationToken ct = default)
+        public Task<string> TranscribeAsync(Stream audioStream, string mimeType, CancellationToken ct = default)
         {
-            // Map MIME type to file extension so Whisper can detect the codec.
-            string extension = mimeType.ToLowerInvariant() switch
-            {
-                "audio/webm" or "audio/webm;codecs=opus" => "webm",
-                "audio/ogg" or "audio/ogg;codecs=opus" => "ogg",
-                "audio/mp4" or "audio/m4a" => "m4a",
-                "audio/mpeg" or "audio/mp3" => "mp3",
-                "audio/wav" or "audio/wave" => "wav",
-                "audio/flac" => "flac",
-                _ => "webm"
-            };
-
-            string fileName = $"audio.{extension}";
-
-            AudioTranscriptionOptions options = new()
-            {
-                Language = "pt",
-                ResponseFormat = AudioTranscriptionFormat.Text,
-            };
-
-            var result = await _audioClient.TranscribeAudioAsync(audioStream, fileName, options, ct);
-            return result.Value.Text.Trim();
+            _logger.LogDebug("Transcribing audio stream with MIME type: {MimeType}", mimeType);
+            return _audioClient.TranscribeAudioAsync(audioStream, mimeType, ct);
         }
     }
 }
