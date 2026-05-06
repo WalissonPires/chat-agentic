@@ -74,8 +74,12 @@ namespace ChatAgentic.Features.Workflows.Executors
             }
 
             _logger.LogDebug("AIAgent reply {messageCount} messages", weContexto.OutputStructuredResponses.Count);
+
             foreach (var r in weContexto.OutputStructuredResponses)
-                _logger.LogDebug("Assistant speakable:\r\n{speakable}\r\nAdditional segments: {segments}", r.SpeakableText, string.Join(", ", r.TextSegments));
+                _logger.LogDebug(
+                    "Assistant speakable:\r\n{speakable}\r\nAdditional segments: {segments}",
+                    r.SpeakableText,
+                    string.Join(", ", r.TextSegments.Select(static segment => $"{segment.Type}: {segment.Label} = {segment.Value}")));
 
             await context.SendMessageAsync(weContexto, ct);
         }

@@ -97,14 +97,14 @@ namespace ChatAgentic.Features.AI.Agent
 Sempre responda no formato estruturado configurado pela aplicacao.
 Regras obrigatorias:
 - speakableText: TODA a resposta em linguagem natural (perguntas, listas faladas, passo a passo, observacoes, ofertas de ajuda). Sem URLs. Nada de "veja no link" sem dizer o que fazer em palavras; o usuario pode ouvir isso em voz alta.
-- textSegments: SOMENTE strings que sao URLs literais (comecam com http:// ou https://). Um item = um link. Nada de frases, nada de numeracao, nada de pergunta, nada de "Se for Android...". Se nao existir URL na resposta, use exatamente [].
+- textSegments: SOMENTE objetos no formato {"type":"url","label":"<descricao-curta>","value":"<url>"}. O campo value deve ser URL literal (comeca com http:// ou https://). Um item = um link. Nada de frases, nada de numeracao, nada de pergunta, nada de "Se for Android...". Se nao existir URL na resposta, use exatamente [].
 - Proibido colocar URL em speakableText. Proibido usar textSegments como "mensagem extra" ou complemento: qualquer texto que nao seja URL vai em speakableText.
 
 Exemplo ERRADO (nao faca):
-{"speakableText":"Baixe o app pelo link...","textSegments":["Voce usa Android ou iPhone?","1) Abra as configuracoes 2) ..."]}
+{"speakableText":"Baixe o app pelo link...","textSegments":[{"type":"text","label":"Pergunta","value":"Voce usa Android ou iPhone?"}]}
 
 Exemplo CERTO quando ha download em https://exemplo.com/app.apk:
-{"speakableText":"Para Android: baixe o aplicativo, permita origem desconhecida e instale. Quer que eu detalhe para celular ou tablet?","textSegments":["https://exemplo.com/app.apk"]}
+{"speakableText":"Para Android: baixe o aplicativo, permita origem desconhecida e instale. Quer que eu detalhe para celular ou tablet?","textSegments":[{"type":"url","label":"Link para download","value":"https://exemplo.com/app.apk"}]}
 
 Exemplo CERTO quando NAO ha URL:
 {"speakableText":"Toda a sua resposta aqui, completa.","textSegments":[]}

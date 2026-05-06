@@ -4,38 +4,56 @@ using Microsoft.Extensions.AI;
 
 namespace ChatAgentic.Features.AI.Agent
 {
+    public sealed class AgentTextSegment
+    {
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = string.Empty;
+
+        [JsonPropertyName("label")]
+        public string Label { get; set; } = string.Empty;
+
+        [JsonPropertyName("value")]
+        public string Value { get; set; } = string.Empty;
+    }
+
     public sealed partial class AgentStructuredResponse
     {
+        private const string UrlSegmentType = "url";
+        private const string DefaultUrlSegmentLabel = "Link";
+
         [JsonPropertyName("speakableText")]
         public string SpeakableText { get; set; } = string.Empty;
 
         [JsonPropertyName("textSegments")]
-        public List<string> TextSegments { get; set; } = [];
+        public List<AgentTextSegment> TextSegments { get; set; } = [];
 
         public AgentStructuredResponse Normalize()
         {
             SpeakableText = (SpeakableText ?? string.Empty).Trim();
-            TextSegments = TextSegments
-                .Where(static segment => !string.IsNullOrWhiteSpace(segment))
-                .Select(segment => segment.Trim())
-                .ToList();
-
-            var orderedUrls = CollectUrlsInOrder([SpeakableText, ..TextSegments]);
+            var normalizedSegments = NormalizeTextSegments(TextSegments);
+            var orderedUrls = CollectUrlsInOrder([SpeakableText, ..normalizedSegments.Select(static segment => segment.Value)]);
 
             var proseParts = new List<string>();
             var speakableWithoutUrls = StripUrlsToProse(SpeakableText);
             if (!string.IsNullOrWhiteSpace(speakableWithoutUrls))
                 proseParts.Add(speakableWithoutUrls);
 
-            foreach (var segment in TextSegments)
+            foreach (var segment in normalizedSegments)
             {
-                var prose = StripUrlsToProse(segment);
+                var prose = StripUrlsToProse(segment.Value);
                 if (!string.IsNullOrWhiteSpace(prose))
                     proseParts.Add(prose);
             }
 
             SpeakableText = CollapseWhitespaceRegex().Replace(string.Join(" ", proseParts), " ").Trim();
-            TextSegments = orderedUrls;
+            TextSegments = orderedUrls
+                .Select(static url => new AgentTextSegment
+                {
+                    Type = UrlSegmentType,
+                    Label = DefaultUrlSegmentLabel,
+                    Value = url
+                })
+                .ToList();
             return this;
         }
 
@@ -80,6 +98,13 @@ namespace ChatAgentic.Features.AI.Agent
             {
                 SpeakableText = speakableText,
                 TextSegments = urls
+                    .Select(static url => new AgentTextSegment
+                    {
+                        Type = UrlSegmentType,
+                        Label = DefaultUrlSegmentLabel,
+                        Value = url
+                    })
+                    .ToList()
             };
         }
 
@@ -98,8 +123,8 @@ namespace ChatAgentic.Features.AI.Agent
 
             foreach (var segment in TextSegments)
             {
-                if (!string.IsNullOrWhiteSpace(segment))
-                    chatMessage.Contents.Add(new TextContent(segment));
+                if (!string.IsNullOrWhiteSpace(segment.Value))
+                    chatMessage.Contents.Add(new TextContent(segment.Value));
             }
 
             return chatMessage;
@@ -125,7 +150,7 @@ namespace ChatAgentic.Features.AI.Agent
 
             foreach (var segment in TextSegments)
             {
-                if (string.IsNullOrWhiteSpace(segment))
+                if (string.IsNullOrWhiteSpace(segment.Value))
                     continue;
 
                 yield return new ChatMessage
@@ -133,9 +158,38 @@ namespace ChatAgentic.Features.AI.Agent
                     MessageId = Guid.NewGuid().ToString("N"),
                     Role = ChatRole.Assistant,
                     CreatedAt = createdAt,
-                    Contents = [new TextContent(segment)]
+                    Contents = [new TextContent(string.IsNullOrEmpty(segment.Label) ? segment.Value : $"{segment.Label}: {segment.Value}")]
                 };
             }
+        }
+
+        private static List<AgentTextSegment> NormalizeTextSegments(IEnumerable<AgentTextSegment>? segments)
+        {
+            if (segments is null)
+                return [];
+
+            var normalized = new List<AgentTextSegment>();
+            foreach (var segment in segments)
+            {
+                if (segment is null || string.IsNullOrWhiteSpace(segment.Value))
+                    continue;
+
+                var value = segment.Value.Trim();
+                if (!value.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                    !value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                normalized.Add(new AgentTextSegment
+                {
+                    Type = UrlSegmentType,
+                    Label = string.IsNullOrWhiteSpace(segment.Label) ? DefaultUrlSegmentLabel : segment.Label.Trim(),
+                    Value = value
+                });
+            }
+
+            return normalized;
         }
 
         private static string TrimTrailingPunctuationFromUrl(string url)
