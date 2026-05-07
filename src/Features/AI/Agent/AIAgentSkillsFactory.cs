@@ -14,7 +14,7 @@ namespace ChatAgentic.Features.AI.Agent
         public AIContextProvider Create()
         {
 #pragma warning disable MAAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            var skillsProvider = new FileAgentSkillsProvider(
+            var skillsProvider = new AgentSkillsProvider(
                 skillPath: Path.Combine(Directory.GetCurrentDirectory(), ".agent", "skills"),
                 loggerFactory: _loggerFactory
             );

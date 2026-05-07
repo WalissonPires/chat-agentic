@@ -59,6 +59,8 @@ namespace ChatAgentic.Features.Workflows.Executors
                 var response = await aiAgent.RunAsync(messages, null, runOptions, ct);
                 var structuredResponse = ParseStructuredResponse(response);
                 weContexto.OutputStructuredResponses.Add(structuredResponse);
+
+                Console.WriteLine(response.Usage?.ToString());
             }
             catch (ClientResultException ex)
             {

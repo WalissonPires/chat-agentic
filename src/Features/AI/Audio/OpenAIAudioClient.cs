@@ -32,6 +32,8 @@ namespace ChatAgentic.Features.AI.Audio
 
             var result = await _audioClient.TranscribeAudioAsync(audioStream, $"audio.{extension}", options, cancellationToken).ConfigureAwait(false);
             var text = result.Value.Text.Trim();
+
+            Console.WriteLine(result.Value.Usage.ToString());
             return text;
         }
     }
