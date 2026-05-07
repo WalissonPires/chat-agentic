@@ -1,3 +1,4 @@
+using ChatAgentic.Features.AI.Usage;
 using ChatAgentic.Persistence;
 using Microsoft.Agents.AI;
 using Pgvector;
@@ -11,12 +12,15 @@ namespace ChatAgentic.Features.AI
         private readonly ILogger _logger;
         private readonly AppDbContext _dbContext;
         private readonly EmbeddingService _embedService;
+        private readonly IAIUsageHistoryRepository _usageHistoryRepository;
 
-        public TextSearchAdpter(ILogger<TextSearchAdpter> logger, AppDbContext dbContext, EmbeddingService embedService)
+        public TextSearchAdpter(ILogger<TextSearchAdpter> logger, AppDbContext dbContext, EmbeddingService embedService,
+            IAIUsageHistoryRepository usageHistoryRepository)
         {
             _dbContext = dbContext;
             _logger = logger;
             _embedService = embedService;
+            _usageHistoryRepository = usageHistoryRepository;
         }
 
         public async Task<IEnumerable<TextSearchProvider.TextSearchResult>> SearchAsync(int workspaceId, string query, string? context, CancellationToken ct = default)
@@ -26,8 +30,10 @@ namespace ChatAgentic.Features.AI
             if (string.IsNullOrEmpty(query))
                 return [];
 
-            var queryEmbed = await _embedService.EmbedAsync(query);
-            var queryVector = new Vector(queryEmbed);
+            var embedResult = await _embedService.EmbedAsync(query, ct);
+            var queryVector = new Vector(embedResult.Vector);
+
+            await _usageHistoryRepository.AddAsync(AIUsageHistoryFactory.Create(workspaceId, conversationId: null, embedResult), ct);
             var maxDistance = 0.7f;
             var topK = 5;
 

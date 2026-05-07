@@ -1,4 +1,5 @@
 using System.ClientModel;
+using ChatAgentic.Features.AI.Usage;
 using OpenAI;
 using OpenAI.Audio;
 
@@ -8,6 +9,7 @@ public sealed class TextToSpeechService
 {
     private readonly AudioClient _audioClient;
     private readonly GeneratedSpeechVoice _voice;
+    private readonly string _provider;
 
     public TextToSpeechService(AIProviderOptions aiProviderOptions)
     {
@@ -15,6 +17,8 @@ public sealed class TextToSpeechService
         var model = aiProviderOptions.TtsModel ?? throw new Exception("AIProvider TtsModel not defined.");
         var voice = aiProviderOptions.TtsVoice ?? throw new Exception("AIProvider TtsVoice not defined.");
         var endpoint = aiProviderOptions.Endpoint;
+
+        _provider = AIProviderName.FromEndpoint(endpoint);
 
         _audioClient = new OpenAIClient(new ApiKeyCredential(apiKey), new OpenAIClientOptions
         {
@@ -45,11 +49,18 @@ public sealed class TextToSpeechService
         };
 
         var audio = await _audioClient.GenerateSpeechAsync(text, _voice, options, ct);
-        return new SynthesizedAudio("audio/mp3", audio);
+        return new SynthesizedAudio("audio/mp3", audio, _provider, text.Length, 0, 0m);
     }
 
-    public record SynthesizedAudio(
+    public sealed record SynthesizedAudio(
         string MimeType,
-        BinaryData Audio
-    );
+        BinaryData Audio,
+        string Provider,
+        long Input,
+        long Output,
+        decimal Cost
+    ) : IAIUsageReport
+    {
+        public AIUsageService Service => AIUsageService.TTS;
+    }
 }

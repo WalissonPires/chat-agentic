@@ -1,4 +1,5 @@
 using ChatAgentic.Features.AI.Audio;
+using ChatAgentic.Features.AI.Usage;
 
 namespace ChatAgentic.Features.AI
 {
@@ -18,7 +19,7 @@ namespace ChatAgentic.Features.AI
             _logger.LogDebug("SpeechToTextService using client: {Client}, model: {Model}", _audioClient.GetType().Name, aiProviderOptions.TranscriptionModel);
         }
 
-        public Task<string> TranscribeAsync(Stream audioStream, string mimeType, CancellationToken ct = default)
+        public Task<SpeechToTextResult> TranscribeAsync(Stream audioStream, string mimeType, CancellationToken ct = default)
         {
             _logger.LogDebug("Transcribing audio stream with MIME type: {MimeType}", mimeType);
             return _audioClient.TranscribeAudioAsync(audioStream, mimeType, ct);

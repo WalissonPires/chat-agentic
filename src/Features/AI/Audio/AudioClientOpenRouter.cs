@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using ChatAgentic.Features.AI.Usage;
 
 namespace ChatAgentic.Features.AI.Audio
 {
@@ -22,7 +23,7 @@ namespace ChatAgentic.Features.AI.Audio
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         }
 
-        public async Task<string> TranscribeAudioAsync(Stream audioStream, string mimeType, CancellationToken cancellationToken = default)
+        public async Task<SpeechToTextResult> TranscribeAudioAsync(Stream audioStream, string mimeType, CancellationToken cancellationToken = default)
         {
             var format = AudioTranscriptionFormats.MapMimeToFormat(mimeType);
             using var ms = new MemoryStream();
@@ -52,7 +53,29 @@ namespace ChatAgentic.Features.AI.Audio
                 throw new InvalidOperationException("OpenRouter STT response did not contain a \"text\" field.");
 
             var text = (textEl.GetString() ?? string.Empty).Trim();
-            return text;
+            var (input, output) = TryReadOpenRouterUsage(doc.RootElement);
+
+            return new SpeechToTextResult
+            {
+                Text = text,
+                Provider = "openrouter",
+                Input = input,
+                Output = output,
+                Cost = 0m
+            };
+        }
+
+        private static (long Input, long Output) TryReadOpenRouterUsage(JsonElement root)
+        {
+            if (!root.TryGetProperty("usage", out var usage))
+                return (0, 0);
+
+            long input = 0, output = 0;
+            if (usage.TryGetProperty("prompt_tokens", out var p))
+                input = p.GetInt64();
+            if (usage.TryGetProperty("completion_tokens", out var c))
+                output = c.GetInt64();
+            return (input, output);
         }
     }
 }

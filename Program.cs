@@ -9,6 +9,7 @@ using ChatAgentic.Features.Knowledgebase;
 using ChatAgentic.Features.Workflows;
 using ChatAgentic.Features.Workflows.Executors;
 using ChatAgentic.Features.Workspaces;
+using ChatAgentic.Features.AI.Usage;
 using ChatAgentic.Persistence;
 using ChatAgentic.Queue;
 using ChatAgentic.Utils;
@@ -75,6 +76,7 @@ builder.Services.AddScoped<TextSearchProviderFactory>();
 
 builder.Services.AddScoped<DocumentExtractor>();
 builder.Services.AddScoped<KnowledgeBaseIngestor>();
+builder.Services.AddScoped<IAIUsageHistoryRepository, AIUsageHistoryRepository>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {

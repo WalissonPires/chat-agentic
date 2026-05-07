@@ -1,4 +1,5 @@
 using ChatAgentic.Features.AI;
+using ChatAgentic.Features.AI.Usage;
 using ChatAgentic.Features.Workflows;
 using ChatAgentic.Utils;
 using Microsoft.Agents.AI.Workflows;
@@ -10,12 +11,15 @@ namespace ChatAgentic.Features.Workflows.Executors
         private readonly ILogger _logger;
         private readonly SpeechToTextService _sttService;
         private readonly MessageMediaStream _mediaStream;
+        private readonly IAIUsageHistoryRepository _usageHistoryRepository;
 
-        public SpeechToTextExecutor(ILogger<SpeechToTextExecutor> logger, SpeechToTextService sttService, MessageMediaStream mediaStream) : base("SpeechToText")
+        public SpeechToTextExecutor(ILogger<SpeechToTextExecutor> logger, SpeechToTextService sttService,
+            MessageMediaStream mediaStream, IAIUsageHistoryRepository usageHistoryRepository) : base("SpeechToText")
         {
             _logger = logger;
             _sttService = sttService;
             _mediaStream = mediaStream;
+            _usageHistoryRepository = usageHistoryRepository;
         }
 
         protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder protocolBuilder)
@@ -56,14 +60,22 @@ namespace ChatAgentic.Features.Workflows.Executors
                     _logger.LogWarning("Audio message MIME Type is empty");
 
                 using var mediaStream = await _mediaStream.GetMediaStream(audioMessage.MediaUri);
-                var transcriptText = await _sttService.TranscribeAsync(mediaStream, audioMessage.MimeType ?? "audio/*", ct);
+                var transcriptResult = await _sttService.TranscribeAsync(mediaStream, audioMessage.MimeType ?? "audio/*", ct);
 
-                _logger.LogDebug("Audio transcribed: {text}", transcriptText);
+                _logger.LogDebug("Audio transcribed: {text}", transcriptResult.Text);
+
+                await _usageHistoryRepository.AddAsync(AIUsageHistoryFactory.Create(weContext.WorkspaceId, weContext.ConversationId, transcriptResult), ct);
+
+                _logger.LogDebug(
+                    "STT usage recorded workspace={workspaceId} conversation={conversationId} provider={provider}",
+                    weContext.WorkspaceId,
+                    weContext.ConversationId,
+                    transcriptResult.Provider);
 
                 var transcriptMessage = audioMessage with
                 {
                     ContentType = Channels.MessageContentType.Text,
-                    ContentText = transcriptText,
+                    ContentText = transcriptResult.Text,
                     MediaUri = null,
                     MimeType = null,
                     FileName = null

@@ -12,6 +12,7 @@ namespace ChatAgentic.Persistence
         public DbSet<Conversation> Conversations { get; set; } = default!;
         public DbSet<ConversationMessage> ConversationMessages { get; set; } = default!;
         public DbSet<Knowledge> Knowledges { get; set; } = default!;
+        public DbSet<AIUsageHistory> AIUsageHistories { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

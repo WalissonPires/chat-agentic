@@ -1,9 +1,11 @@
+using ChatAgentic.Features.AI;
 using ChatAgentic.Features.AI.Agent;
+using ChatAgentic.Features.AI.Usage;
 using ChatAgentic.Features.Channels;
+using ChatAgentic.src.Features.AI;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
-using ChatAgentic.src.Features.AI;
 using System.ClientModel;
 using System.Text.Json;
 
@@ -13,11 +15,16 @@ namespace ChatAgentic.Features.Workflows.Executors
     {
         private readonly ILogger _logger;
         private readonly AIAgentFactory _aiAgentFactory;
+        private readonly AIProviderOptions _aiProviderOptions;
+        private readonly IAIUsageHistoryRepository _usageHistoryRepository;
 
-        public AIAgentExecutor(ILogger<AIAgentExecutor> logger, AIAgentFactory aiAgentFactory) : base("Agent")
+        public AIAgentExecutor(ILogger<AIAgentExecutor> logger, AIAgentFactory aiAgentFactory,
+            AIProviderOptions aiProviderOptions, IAIUsageHistoryRepository usageHistoryRepository) : base("Agent")
         {
             _logger = logger;
             _aiAgentFactory = aiAgentFactory;
+            _aiProviderOptions = aiProviderOptions;
+            _usageHistoryRepository = usageHistoryRepository;
         }
 
         protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder protocolBuilder)
@@ -60,7 +67,26 @@ namespace ChatAgentic.Features.Workflows.Executors
                 var structuredResponse = ParseStructuredResponse(response);
                 weContexto.OutputStructuredResponses.Add(structuredResponse);
 
-                Console.WriteLine(response.Usage?.ToString());
+                var (input, output) = AIUsageTokenMapper.FromUsageDetails(response.Usage);
+                var provider = AIProviderName.FromEndpoint(_aiProviderOptions.Endpoint);
+                var chatReport = new ChatUsageReport
+                {
+                    Provider = provider,
+                    Input = input,
+                    Output = output,
+                    Cost = 0m
+                };
+                await _usageHistoryRepository.AddAsync(
+                    AIUsageHistoryFactory.Create(weContexto.WorkspaceId, weContexto.ConversationId, chatReport),
+                    ct);
+
+                _logger.LogDebug(
+                    "AI usage recorded workspace={workspaceId} conversation={conversationId} provider={provider} input={inputTokens} output={outputTokens}",
+                    weContexto.WorkspaceId,
+                    weContexto.ConversationId,
+                    provider,
+                    input,
+                    output);
             }
             catch (ClientResultException ex)
             {

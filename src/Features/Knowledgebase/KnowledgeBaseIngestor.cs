@@ -1,4 +1,5 @@
 using ChatAgentic.Features.AI;
+using ChatAgentic.Features.AI.Usage;
 using ChatAgentic.Persistence;
 using ChatAgentic.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +12,16 @@ namespace ChatAgentic.Features.Knowledgebase
         private readonly DocumentExtractor _docExtractor;
         private readonly EmbeddingService _embedService;
         private readonly AppDbContext _dbContext;
+        private readonly IAIUsageHistoryRepository _usageHistoryRepository;
         private readonly ILogger _logger;
 
-        public KnowledgeBaseIngestor(DocumentExtractor docExtractor, EmbeddingService embedService,
-            AppDbContext dbContext, ILogger<KnowledgeBaseIngestor> logger)
+        public KnowledgeBaseIngestor(DocumentExtractor docExtractor, EmbeddingService embedService, AppDbContext dbContext,
+            IAIUsageHistoryRepository usageHistoryRepository, ILogger<KnowledgeBaseIngestor> logger)
         {
             _docExtractor = docExtractor;
             _embedService = embedService;
             _dbContext = dbContext;
+            _usageHistoryRepository = usageHistoryRepository;
             _logger = logger;
         }
 
@@ -58,13 +61,21 @@ namespace ChatAgentic.Features.Knowledgebase
             var currentDate = DateTime.UtcNow;
 
             var chunkCount = 0;
+            long totalInput = 0;
+            long totalOutput = 0;
+            string? embedProvider = null;
+
             foreach (var chunk in chunks)
             {
                 chunkCount++;
 
                 _logger.LogDebug("Embed chunk {index}/{count}", chunkCount, chunks.Length);
 
-                var embed = await _embedService.EmbedAsync(chunk);
+                var embedResult = await _embedService.EmbedAsync(chunk);
+                embedProvider ??= embedResult.Provider;
+                totalInput += embedResult.Input;
+                totalOutput += embedResult.Output;
+
                 _dbContext.Knowledges.Add(new Knowledge
                 {
                     WorkspaceId = workspaceId,
@@ -72,7 +83,7 @@ namespace ChatAgentic.Features.Knowledgebase
                     Context = input.Context,
                     Source = input.Filename,
                     Content = chunk,
-                    Embedding = new Vector(embed),
+                    Embedding = new Vector(embedResult.Vector),
                 });
             }
 
@@ -80,6 +91,12 @@ namespace ChatAgentic.Features.Knowledgebase
             await _dbContext.Knowledges.Where(x => x.WorkspaceId == workspaceId && x.Context == input.Context && x.Source == input.Filename).ExecuteDeleteAsync();
             await _dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            if (chunks.Length > 0 && embedProvider is not null)
+            {
+                var report = new EmbeddingAggregateUsageReport(embedProvider, totalInput, totalOutput);
+                await _usageHistoryRepository.AddAsync(AIUsageHistoryFactory.Create(workspaceId, conversationId: null, report));
+            }
 
             _logger.LogDebug("Knowledge ingestion done");
         }
