@@ -1,5 +1,3 @@
-using ChatAgentic.Features.Channels.Telegram;
-using ChatAgentic.Features.Channels.Whatsapp;
 using ChatAgentic.Features.AI.Agent;
 
 namespace ChatAgentic.Entities
@@ -13,12 +11,16 @@ namespace ChatAgentic.Entities
 
         public int WorkspaceId { get; set; }
         public Workspace Workspace { get; set; } = default!;
+
+        public int? WhatsappChannelId { get; set; }
+        public Channel? WhatsappChannel { get; set; }
+
+        public int? TelegramChannelId { get; set; }
+        public Channel? TelegramChannel { get; set; }
     }
 
     public class AgentDefinitionMetadata
     {
         public AgentOptions? Agent { get; set; }
-        public EvolutionApiOptions? EvolutionApi { get; set; }
-        public TelegramApiOptions? Telegram { get; set; }
     }
 }

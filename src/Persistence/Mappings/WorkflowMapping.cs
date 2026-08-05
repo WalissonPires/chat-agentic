@@ -17,11 +17,19 @@ namespace ChatAgentic.Persistence.Mappings
             {
                 meta.ToJson();
                 meta.OwnsOne(m => m.Agent);
-                meta.OwnsOne(m => m.EvolutionApi);
-                meta.OwnsOne(m => m.Telegram);
             });
 
             builder.HasOne(x => x.Workspace).WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(x => x.WhatsappChannel)
+                .WithMany()
+                .HasForeignKey(x => x.WhatsappChannelId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(x => x.TelegramChannel)
+                .WithMany()
+                .HasForeignKey(x => x.TelegramChannelId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasIndex(x => x.WebhookToken).IsUnique();
             builder.HasIndex(x => x.WorkspaceId);

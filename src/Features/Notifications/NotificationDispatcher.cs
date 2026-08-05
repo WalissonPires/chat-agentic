@@ -1,6 +1,5 @@
 using ChatAgentic.Entities;
 using ChatAgentic.Features.Channels;
-using ChatAgentic.Features.Workflows;
 using ChatAgentic.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
@@ -15,7 +14,7 @@ namespace ChatAgentic.Features.Notifications
         private readonly NotificationTagReplacer _tagReplacer;
         private readonly ChannelSendMessageFactory _channelSendMessageFactory;
         private readonly WorkspaceLoader _workspaceLoader;
-        private readonly WorkflowContext _workflowContext;
+        private readonly ChannelLoader _channelLoader;
         private readonly ILogger<NotificationDispatcher> _logger;
 
         public NotificationDispatcher(
@@ -25,7 +24,7 @@ namespace ChatAgentic.Features.Notifications
             NotificationTagReplacer tagReplacer,
             ChannelSendMessageFactory channelSendMessageFactory,
             WorkspaceLoader workspaceLoader,
-            WorkflowContext workflowContext,
+            ChannelLoader channelLoader,
             ILogger<NotificationDispatcher> logger)
         {
             _db = db;
@@ -34,7 +33,7 @@ namespace ChatAgentic.Features.Notifications
             _tagReplacer = tagReplacer;
             _channelSendMessageFactory = channelSendMessageFactory;
             _workspaceLoader = workspaceLoader;
-            _workflowContext = workflowContext;
+            _channelLoader = channelLoader;
             _logger = logger;
         }
 
@@ -51,14 +50,6 @@ namespace ChatAgentic.Features.Notifications
             }
 
             var workspace = await _workspaceLoader.LoadFromWorkspaceIdAsync(rule.WorkspaceId, ct) ?? rule.Workspace;
-
-            var agentDefinition = await _db.Agents.AsNoTracking()
-                .FirstOrDefaultAsync(a => a.WorkspaceId == rule.WorkspaceId, ct);
-
-            if (agentDefinition != null)
-            {
-                _workflowContext.SetFromAgentDefinition(agentDefinition);
-            }
 
             var now = DateTime.UtcNow;
             var batchId = Guid.NewGuid();
@@ -93,6 +84,38 @@ namespace ChatAgentic.Features.Notifications
                         Channel = rule.Channels.FirstOrDefault(),
                         Status = NotificationLogStatus.Skipped,
                         ErrorMessage = "No available contact for configured channels",
+                        ExecutionBatchId = batchId,
+                        ExecutionPeriodKey = periodKey,
+                        SentAt = DateTime.UtcNow
+                    });
+                    continue;
+                }
+
+                var notifChannelId = contact.Channel switch
+                {
+                    ChannelType.Whatsapp => workspace.Metadata?.NotificationWhatsappChannelId,
+                    ChannelType.Telegram => workspace.Metadata?.NotificationTelegramChannelId,
+                    _ => null
+                };
+
+                Channel? channel = null;
+                if (notifChannelId.HasValue)
+                {
+                    channel = await _channelLoader.LoadByIdAsync(notifChannelId.Value, ct);
+                }
+
+                channel ??= await _channelLoader.LoadByWorkspaceAndTypeAsync(rule.WorkspaceId, contact.Channel, ct);
+
+                if (channel == null)
+                {
+                    _logger.LogWarning("No channel configured for workspace {WorkspaceId} and channel type {Channel}", rule.WorkspaceId, contact.Channel);
+                    _db.NotificationLogs.Add(new NotificationLog
+                    {
+                        NotificationRuleId = rule.Id,
+                        PersonId = person.Id,
+                        Channel = contact.Channel,
+                        Status = NotificationLogStatus.Failed,
+                        ErrorMessage = $"No channel credentials configured for {contact.Channel}",
                         ExecutionBatchId = batchId,
                         ExecutionPeriodKey = periodKey,
                         SentAt = DateTime.UtcNow

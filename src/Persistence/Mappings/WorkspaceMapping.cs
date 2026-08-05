@@ -18,6 +18,11 @@ namespace ChatAgentic.Persistence.Mappings
                 meta.OwnsOne(m => m.AIProvider);
             });
 
+            builder.HasMany(x => x.Channels)
+                .WithOne(c => c.Workspace)
+                .HasForeignKey(c => c.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.HasIndex(x => x.IntegrationToken);
         }
     }
