@@ -46,12 +46,14 @@ As credenciais e parâmetros vivem no banco em duas camadas:
 - **Tools**: integração com **Model Context Protocol (MCP)** para expor ferramentas externas ao modelo.
 - **Skills**: instruções em Markdown carregadas do disco, alinhadas ao padrão de skills do ecossistema de agentes.
 - **RAG**: ingestão de documentos, chunking, embeddings e busca textual/vetorial sobre a base de conhecimento do workspace, com fatias por **contexto** quando aplicável.
+- **Notificações**: envio automatizado de mensagens para pessoas através de seus contatos, com triggers temporais (diário, mensal, anual) via **Hangfire**, ordem de prioridade de canais, filtros dinâmicos de metadados, sistema de tags e registros de auditoria.
 
 ### Endpoints principais
 
 - `GET /` — verificação de disponibilidade.
 - `POST /webhook/{channel}/{token}` — entrada de mensagens por canal (o `channel` identifica o tipo; o `token` autentica a instância).
 - `POST /knowledge/ingestion` — upload de arquivo para indexação na base de conhecimento (multipart).
+- `POST /notifications/{ruleId}/trigger` — disparo manual de uma regra de notificação (recebe `token` via query string para validação do tenant).
 
 Documentação OpenAPI é exposta em ambiente de desenvolvimento.
 
@@ -158,6 +160,71 @@ Na pasta da tool adicione os arquivos do servidor mcp e crie o `TOOL.json` com i
   }
 }
 ```
+
+## Sistema de Notificações
+
+O sistema de notificações permite agendar e enviar mensagens para **Pessoas** cadastradas no workspace através de seus **Contatos** (WhatsApp, Telegram).
+
+### Conceitos Chave
+
+1. **Notificação Omnichannel com Prioridade de Canais (`channels`)**: A regra define uma lista ordenada de canais preferenciais (ex: `["Whatsapp", "Telegram"]`). Para cada pessoa alvo, o sistema tenta enviar a mensagem pelo primeiro canal em que a pessoa possui contato cadastrado.
+2. **Sistema de Tags em Templates (`message_template`)**: O corpo da mensagem aceita tags com sintaxe `{{tag}}` que são substituídas dinamicamente:
+   - `{{person.name}}`: Nome da pessoa.
+   - `{{person.meta.<chave>}}`: Valor de um metadado específico da pessoa (ex: `{{person.meta.plano}}`).
+   - `{{workspace.name}}`: Nome do workspace.
+   - `{{date}}`: Data atual formatada (`dd/MM/yyyy`).
+   - `{{time}}`: Hora atual formatada (`HH:mm`).
+3. **Triggers Temporais Recorrentes (`trigger_type`)**:
+   - `Daily`: Executa diariamente no horário especificado (`TriggerConfig.Time`).
+   - `Monthly`: Executa mensalmente no dia (`TriggerConfig.DayOfMonth`) e horário especificados.
+   - `Yearly`: Executa anualmente no mês (`TriggerConfig.Month`), dia (`TriggerConfig.DayOfMonth`) e horário especificados.
+   - Gerenciados nativamente pelo **Hangfire** e gravados no PostgreSQL.
+4. **Alvo Flexível (`target_type`)**:
+   - `All`: Notifica todas as pessoas do workspace.
+   - `Specific`: Notifica uma lista fixa de IDs de pessoas (`target_person_ids`).
+   - `Dynamic`: Filtra pessoas dinamicamente com base em regras compostas de metadados (`target_filters`), suportando operadores `Equals` e `NotEquals`.
+5. **Deduplicação e Auditoria (`notification_logs`)**:
+   - Cada disparo gera um `ExecutionBatchId` (Guid) para agrupamento e auditoria.
+   - É gravada uma chave de período `ExecutionPeriodKey` (ex: `yyyy-MM-dd` para diário) garantindo que uma pessoa receba no máximo uma notificação por período, mesmo se o trigger for executado repetidas vezes.
+
+### Schema da tabela `notification_rules`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | `int` | Chave primária |
+| `name` | `varchar(120)` | Nome descritivo da regra |
+| `channels` | `jsonb` | Lista ordenada de `ChannelType` (`["Whatsapp", "Telegram"]`) |
+| `message_template` | `text` | Template da mensagem com tags `{{...}}` |
+| `trigger_type` | `varchar` | `Daily`, `Monthly` ou `Yearly` |
+| `trigger_config` | `jsonb` | `{ "time": "09:00:00", "dayOfMonth": 5, "month": 8 }` |
+| `target_type` | `varchar` | `All`, `Specific` ou `Dynamic` |
+| `target_person_ids` | `jsonb` | Lista de IDs de pessoas quando `target_type = 'Specific'` |
+| `target_filters` | `jsonb` | Lista de filtros `[{"field": "plano", "operator": "Equals", "value": "premium"}]` |
+| `enabled` | `boolean` | Se a regra está ativa |
+| `last_executed_at` | `timestamp` | Data/hora do último disparo |
+| `next_execution_at` | `timestamp` | Data/hora calculada para o próximo disparo |
+| `hangfire_job_id` | `varchar` | ID de agendamento no Hangfire |
+| `workspace_id` | `int` | FK para `workspaces.id` |
+
+### Disparo Manual via API
+
+Além das execuções temporais, é possível disparar uma regra de notificação manualmente a qualquer momento:
+
+- `POST /notifications/{ruleId}/trigger?token={workspace_integration_token}`
+
+Exemplo de resposta:
+```json
+{
+  "message": "Notification rule triggered successfully",
+  "executionBatchId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+}
+```
+
+### Dashboard Hangfire
+
+Em ambiente de desenvolvimento (`ASPNETCORE_ENVIRONMENT=Development`), a interface de monitoramento e execução de jobs do Hangfire está disponível em:
+
+- `http://localhost:5010/hangfire`
 
 ---
 
@@ -276,7 +343,9 @@ Utilize o ngrok para criar um endpoint e registre o endpoint nos canais utilizad
 ngrok http 5010
 ```
 
-Em desenvolvimento, a documentação OpenAPI fica disponível em http://localhost:5010/openapi/v1.json.
+Em desenvolvimento, a documentação OpenAPI e a interface interativa do **Swagger UI** com suporte a **Bearer Token** (autenticação via `IntegrationToken` do workspace) ficam disponíveis em:
+- **Swagger UI**: http://localhost:5010/swagger
+- **OpenAPI JSON**: http://localhost:5010/openapi/v1.json
 
 ### Configuração de webhook no Telegram
 
