@@ -28,7 +28,13 @@ namespace ChatAgentic.Features.Channels.Whatsapp
                 throw new ArgumentException("JSON payload is empty");
 
             var payload = JsonSerializer.Deserialize<EvolutionWebhookPayload>(input.JsonPayload, _jsonOptions);
-            var data = payload?.Data ?? throw new Exception("Invalid message payload");
+            if (payload == null || !string.Equals(payload.Event, "messages.upsert", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogDebug("Ignored non-message event: {Event}", payload?.Event ?? "unknown");
+                return new ChannelMessageTransformResult(SelfMessage: false, Skip: true);
+            }
+
+            var data = payload.Data?.Deserialize<EvolutionPayloadData>(_jsonOptions) ?? throw new Exception("Invalid message payload");
 
             // Extract phone "5511988001122@s.whatsapp.net" => "5511988001122"
             string phone = data.Key?.RemoteJid ?? string.Empty;

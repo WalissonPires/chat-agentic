@@ -1,10 +1,12 @@
+using System.Text.Json;
+
 namespace ChatAgentic.Features.Channels.Whatsapp
 {
     public class EvolutionWebhookPayload
     {
         public string? Event { get; set; }
         public string? Instance { get; set; }
-        public EvolutionPayloadData? Data { get; set; }
+        public JsonElement? Data { get; set; }
         public string? Destination { get; set; }
         public string? DateTime { get; set; }
         public string? Sender { get; set; }

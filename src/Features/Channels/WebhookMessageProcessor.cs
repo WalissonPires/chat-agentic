@@ -49,24 +49,22 @@ namespace ChatAgentic.Features.Channels
             _logger.LogDebug("Process message");
             var result = await processor.Execute(new(agentDefinition.WorkspaceId, agentDefinition.Id, input.JsonPayload));
 
-            if (result.SelfMessage)
+            if (result.Skip || result.SelfMessage || result.Message == null)
             {
-                _logger.LogDebug("Skip self message");
+                _logger.LogDebug("Skip message processing");
                 return;
             }
 
-            if (!string.IsNullOrEmpty(result.Message.ContentText))
+            var message = result.Message;
+            if (!string.IsNullOrEmpty(message.ContentText))
             {
-                result = result with
+                message = message with
                 {
-                    Message = result.Message with
-                    {
-                        ContentText = TextSanatization(result.Message.ContentText)
-                    }
+                    ContentText = TextSanatization(message.ContentText)
                 };
             }
 
-            await _queue.EnqueueAsync(result.Message);
+            await _queue.EnqueueAsync(message);
 
             _logger.LogDebug("Message processed");
         }

@@ -13,6 +13,7 @@ namespace ChatAgentic.Features.Channels
 
     public record ChannelMessageTransformResult(
         bool SelfMessage,
-        Message Message
+        Message? Message = null,
+        bool Skip = false
     );
 }
