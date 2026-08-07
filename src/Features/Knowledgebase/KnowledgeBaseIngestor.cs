@@ -31,19 +31,6 @@ namespace ChatAgentic.Features.Knowledgebase
 
             using var fileStream = input.File;
 
-            if (string.IsNullOrEmpty(input.Token))
-            {
-                _logger.LogDebug("Integration token is empty");
-                return;
-            }
-
-            var workspaceId = await _dbContext.Workspaces.Where(x => x.IntegrationToken == input.Token).Select(x => x.Id).FirstOrDefaultAsync();
-            if (workspaceId == default)
-            {
-                _logger.LogError("Integration token not found");
-                return;
-            }
-
             _logger.LogDebug("Extract document content");
             var fileContent = await _docExtractor.ExtractTextAsync(input.Filename, fileStream);
 
@@ -78,7 +65,7 @@ namespace ChatAgentic.Features.Knowledgebase
 
                 _dbContext.Knowledges.Add(new Knowledge
                 {
-                    WorkspaceId = workspaceId,
+                    WorkspaceId = input.WorkspaceId,
                     CreatedAt = currentDate,
                     Context = input.Context,
                     Source = input.Filename,
@@ -88,14 +75,14 @@ namespace ChatAgentic.Features.Knowledgebase
             }
 
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
-            await _dbContext.Knowledges.Where(x => x.WorkspaceId == workspaceId && x.Context == input.Context && x.Source == input.Filename).ExecuteDeleteAsync();
+            await _dbContext.Knowledges.Where(x => x.WorkspaceId == input.WorkspaceId && x.Context == input.Context && x.Source == input.Filename).ExecuteDeleteAsync();
             await _dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
 
             if (chunks.Length > 0 && embedProvider is not null)
             {
                 var report = new EmbeddingAggregateUsageReport(embedProvider, totalInput, totalOutput);
-                await _usageHistoryRepository.AddAsync(AIUsageHistoryFactory.Create(workspaceId, conversationId: null, report));
+                await _usageHistoryRepository.AddAsync(AIUsageHistoryFactory.Create(input.WorkspaceId, conversationId: null, report));
             }
 
             _logger.LogDebug("Knowledge ingestion done");
@@ -103,7 +90,7 @@ namespace ChatAgentic.Features.Knowledgebase
     }
 
     public record KnowledgeBaseIngestorInput(
-        string Token,
+        int WorkspaceId,
         string Context,
         string Filename,
         Stream File,

@@ -168,45 +168,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.MapGet("/", () => new { Status = "healthy" });
-
-app.MapPost("/webhook/{channel}/{token}", async (string channel, string token, JsonElement body, WebhookMessageProcessor messageProcessor) =>
-{
-    var channelType = Enum.Parse<ChannelType>(channel, ignoreCase: true);
-    await messageProcessor.Execute(new(channelType, token, body.ToString()));
-});
-
-app.MapPost("/knowledge/ingestion", async ([FromForm] KnowledgeIngestionDTO dto, IServiceScopeFactory scopeFactory) =>
-{
-    if (dto.File == null)
-        return Results.BadRequest(new { Message = "File is required" });
-
-    await using var scope = scopeFactory.CreateAsyncScope();
-    var sp = scope.ServiceProvider;
-
-    var token = dto.Token ?? string.Empty;
-    if (string.IsNullOrEmpty(token))
-        return Results.BadRequest(new { Message = "Token is required" });
-
-    var workspaceLoader = sp.GetRequiredService<WorkspaceLoader>();
-    var workspace = await workspaceLoader.LoadFromIntegrationTokenAsync(token);
-    if (workspace == null)
-        return Results.BadRequest(new { Message = "Token invalid" });
-
-    var ingestor = sp.GetRequiredService<KnowledgeBaseIngestor>();
-    await ingestor.ExecuteAsync(new KnowledgeBaseIngestorInput(
-        Context: dto.Context ?? Knowledge.DefaultContext,
-        ChunkerType: dto.ChunkerType,
-        ClearText: dto.ClearText ?? false,
-        Token: token,
-        Filename: dto.File.FileName,
-        File: dto.File.OpenReadStream()
-    ));
-
-    return Results.Ok();
-})
-.DisableAntiforgery();
-
 
 app.Run();

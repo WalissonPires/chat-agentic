@@ -26,14 +26,14 @@ namespace ChatAgentic.Features.Notifications
         }
 
         [HttpGet]
-        public async Task<IActionResult> List(CancellationToken ct)
+        public async Task<ActionResult<List<NotificationRuleOutput>>> List(CancellationToken ct)
         {
             var results = await _ruleService.ListAsync(WorkspaceId, ct);
             return Ok(results);
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken ct)
+        public async Task<ActionResult<NotificationRuleOutput>> GetById(int id, CancellationToken ct)
         {
             var result = await _ruleService.GetByIdAsync(WorkspaceId, id, ct);
             if (result == null)
@@ -43,7 +43,7 @@ namespace ChatAgentic.Features.Notifications
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] NotificationRuleInput input, CancellationToken ct)
+        public async Task<ActionResult<NotificationRuleOutput>> Update(int id, [FromBody] NotificationRuleInput input, CancellationToken ct)
         {
             var result = await _ruleService.UpdateAsync(WorkspaceId, id, input, ct);
             if (result == null)
@@ -63,13 +63,18 @@ namespace ChatAgentic.Features.Notifications
         }
 
         [HttpPost("{id:int}/trigger")]
-        public async Task<IActionResult> Trigger(int id, CancellationToken ct)
+        public async Task<ActionResult<TriggerOutput>> Trigger(int id, CancellationToken ct)
         {
             var batchId = await _ruleService.TriggerAsync(WorkspaceId, id, ct);
             if (batchId == null)
                 return NotFound(new { Message = $"Notification rule {id} not found." });
 
-            return Ok(new { Message = "Notification rule triggered successfully", ExecutionBatchId = batchId });
+            return Ok(new TriggerOutput("Notification rule triggered successfully", batchId.Value));
         }
     }
+
+    public record TriggerOutput(
+        string Message,
+        Guid ExecutionBatchId
+    );
 }
