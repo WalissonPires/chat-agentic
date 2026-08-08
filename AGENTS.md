@@ -29,3 +29,12 @@
     "textSegments": ["https://example.com/url"]
   }
   ```
+## Rules
+
+- Nunca ler arquivos das pastas: node_modules, bin, obj.
+- Seguir princípios SOLID e Clean Code em todo o código.
+- Usar padrões modernos do C# 14 / .NET 10 (pattern matching, records, primary constructors).
+- Seguir Conventional Commits para mensagens de commit (feat:, fix:, chore:, refactor:, docs:).
+- Respeitar isolamento multi-tenant (sempre escopar por workspace_id).
+- Programação assíncrona: sem sync-over-async.
+- Investigar a estrutura do repositório antes de propor mudanças.
