@@ -73,14 +73,4 @@ namespace ChatAgentic.Features.Workspaces
             return AuthenticateResult.Success(ticket);
         }
     }
-
-    public static class ClaimsPrincipalExtensions
-    {
-        public static int GetWorkspaceId(this ClaimsPrincipal principal)
-        {
-            var claim = principal.FindFirstValue(IntegrationTokenDefaults.WorkspaceIdClaim)
-                ?? throw new InvalidOperationException("WorkspaceId claim not found.");
-            return int.Parse(claim);
-        }
-    }
 }

@@ -59,6 +59,9 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAuthentication(IntegrationTokenDefaults.AuthenticationScheme)
     .AddScheme<AuthenticationSchemeOptions, IntegrationTokenAuthHandler>(IntegrationTokenDefaults.AuthenticationScheme, null);
 builder.Services.AddAuthorization();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CurrentUserFactory>();
+builder.Services.AddScoped<ICurrentUser>(x => x.GetRequiredService<CurrentUserFactory>().Create());
 
 builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddScoped<WorkspaceLoader>();

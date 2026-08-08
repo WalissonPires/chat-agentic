@@ -10,11 +10,12 @@ namespace ChatAgentic.Features.Knowledgebase
     [Authorize]
     public class KnowledgeController : ControllerBase
     {
-        public KnowledgeController()
-        {
-        }
+        private readonly ICurrentUser _currentUser;
 
-        private int WorkspaceId => User.GetWorkspaceId();
+        public KnowledgeController(ICurrentUser currentUser)
+        {
+            _currentUser = currentUser;
+        }
 
         [HttpPost("ingestion")]
         public async Task<IActionResult> Ingest([FromForm] KnowledgeIngestionDTO dto, [FromServices]KnowledgeBaseIngestor ingestor, CancellationToken ct)
@@ -27,7 +28,7 @@ namespace ChatAgentic.Features.Knowledgebase
                 return BadRequest(new { Message = "Token is required" });
 
             await ingestor.ExecuteAsync(new KnowledgeBaseIngestorInput(
-                WorkspaceId: WorkspaceId,
+                WorkspaceId: _currentUser.WorkspaceId,
                 Context: dto.Context ?? Knowledge.DefaultContext,
                 ChunkerType: dto.ChunkerType,
                 ClearText: dto.ClearText ?? false,
